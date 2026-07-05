@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ServerWatch — WebSocket Test</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 24px;
+    }
+
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; color: #7dd3fc; }
+
+    /* ── Status bar ─────────────────────────────────────── */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 10px 16px;
+      background: #1e2433;
+      border-radius: 8px;
+    }
+
+    #status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #64748b;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #status-dot.connected    { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    #status-dot.connecting   { background: #f59e0b; animation: pulse 1s infinite; }
+    #status-dot.disconnected { background: #ef4444; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    #status-text { font-size: .9rem; flex: 1; }
+    #msg-count   { font-size: .8rem; color: #94a3b8; }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 6px;
+      font-size: .85rem; cursor: pointer; font-weight: 500;
+      transition: opacity .15s;
+    }
+    .btn:hover        { opacity: .85; }
+    .btn:disabled     { opacity: .4; cursor: not-allowed; }
+    .btn-primary      { background: #3b82f6; color: #fff; }
+    .btn-danger       { background: #ef4444; color: #fff; }
+    .btn-secondary    { background: #334155; color: #e2e8f0; }
+
+    #controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+
+    /* ── Panels grid ─────────────────────────────────────── */
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+    }
+
+    .panel {
+      background: #1e2433;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #252d3d;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    .panel-title  { font-size: .85rem; font-weight: 600; color: #93c5fd; }
+    .panel-badge  {
+      font-size: .7rem; padding: 2px 8px;
+      border-radius: 999px;
+      background: #1e3a5f;
+      color: #7dd3fc;
+    }
+    .panel-badge.active { background: #14532d; color: #86efac; }
+
+    pre {
+      margin: 0;
+      padding: 12px 14px;
+      font-size: .78rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    /* ── Summary row for system metrics ─────────────────── */
+    #summary {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    #summary.visible { display: grid; }
+
+    .stat-card {
+      background: #1e2433;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .stat-label { font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; margin-top: 2px; }
+    .stat-unit  { font-size: .75rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<h1>ServerWatch — WebSocket Live Test</h1>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <div id="status-dot" class="connecting"></div>
+  <span id="status-text">Connecting to ws://localhost:8090/ws …</span>
+  <span id="msg-count">0 messages</span>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="btn btn-danger"    id="btn-disconnect" disabled>Disconnect</button>
+  <button class="btn btn-primary"   id="btn-reconnect">Reconnect</button>
+  <button class="btn btn-secondary" id="btn-request">Request Snapshot</button>
+  <button class="btn btn-secondary" id="btn-history">Request History (CPU, 1h)</button>
+  <button class="btn btn-secondary" id="btn-clear">Clear All</button>
+</div>
+
+<!-- Live stat cards (populated from system topic) -->
+<div id="summary">
+  <div class="stat-card">
+    <div class="stat-label">CPU</div>
+    <div class="stat-value" id="stat-cpu">–</div>
+    <div class="stat-unit">%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Memory</div>
+    <div class="stat-value" id="stat-mem">–</div>
+    <div class="stat-unit">%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Swap Used</div>
+    <div class="stat-value" id="stat-swap">–</div>
+    <div class="stat-unit">MB</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Cores</div>
+    <div class="stat-value" id="stat-cores">–</div>
+    <div class="stat-unit">logical</div>
+  </div>
+</div>
+
+<!-- Message panels -->
+<div class="panels">
+  <div class="panel" id="panel-system">
+    <div class="panel-header">
+      <span class="panel-title">/topic/metrics/system</span>
+      <span class="panel-badge" id="badge-system">waiting</span>
+    </div>
+    <pre id="pre-system">Waiting for first message…</pre>
+  </div>
+
+  <div class="panel" id="panel-network">
+    <div class="panel-header">
+      <span class="panel-title">/topic/metrics/network</span>
+      <span class="panel-badge" id="badge-network">waiting</span>
+    </div>
+    <pre id="pre-network">Waiting for first message…</pre>
+  </div>
+
+  <div class="panel" id="panel-processes">
+    <div class="panel-header">
+      <span class="panel-title">/topic/metrics/processes</span>
+      <span class="panel-badge" id="badge-processes">waiting</span>
+    </div>
+    <pre id="pre-processes">Waiting for first message…</pre>
+  </div>
+
+  <div class="panel" id="panel-history">
+    <div class="panel-header">
+      <span class="panel-title">/user/queue/history</span>
+      <span class="panel-badge" id="badge-history">waiting</span>
+    </div>
+    <pre id="pre-history">Click "Request History" to populate…</pre>
+  </div>
+</div>
+
+<!-- SockJS + STOMP.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+
+<script>
+  // ── State ───────────────────────────────────────────────
+  let stompClient = null;
+  let msgCount    = 0;
+  const WS_URL    = 'http://localhost:8090/ws';
+
+  // ── DOM helpers ─────────────────────────────────────────
+  const $  = id  => document.getElementById(id);
+  const setStatus = (cls, text) => {
+    $('status-dot').className = cls;
+    $('status-text').textContent = text;
+  };
+  const bumpCount = () => {
+    msgCount++;
+    $('msg-count').textContent = `${msgCount} messages received`;
+  };
+  const setBadge = (id, text, active = false) => {
+    const el = $(id);
+    el.textContent = text;
+    el.className = 'panel-badge' + (active ? ' active' : '');
+  };
+  const fmt = obj => JSON.stringify(obj, null, 2);
+
+  // ── STOMP client factory ─────────────────────────────────
+  function createClient() {
+    return new StompJs.Client({
+      webSocketFactory: () => new SockJS(WS_URL),
+      reconnectDelay: 5000,
+
+      onConnect: (frame) => {
+        setStatus('connected', `Connected — ${frame.headers.server ?? 'STOMP'}`);
+        $('btn-disconnect').disabled = false;
+        $('btn-reconnect').disabled  = true;
+        $('summary').classList.add('visible');
+
+        // /topic/metrics/system
+        stompClient.subscribe('/topic/metrics/system', msg => {
+          const data = JSON.parse(msg.body);
+          $('pre-system').textContent = fmt(data);
+          setBadge('badge-system', new Date().toLocaleTimeString(), true);
+          // Update stat cards
+          $('stat-cpu').textContent   = data.cpuUsagePercent?.toFixed(1) ?? '–';
+          $('stat-mem').textContent   = data.memoryUsagePercent?.toFixed(1) ?? '–';
+          $('stat-swap').textContent  = data.swapUsedBytes
+            ? (data.swapUsedBytes / 1048576).toFixed(0) : '–';
+          $('stat-cores').textContent = data.cpuCoreCount ?? '–';
+          bumpCount();
+        });
+
+        // /topic/metrics/network
+        stompClient.subscribe('/topic/metrics/network', msg => {
+          const data = JSON.parse(msg.body);
+          $('pre-network').textContent = fmt(data);
+          setBadge('badge-network', `${data.length} iface${data.length !== 1 ? 's' : ''}`, true);
+          bumpCount();
+        });
+
+        // /topic/metrics/processes
+        stompClient.subscribe('/topic/metrics/processes', msg => {
+          const data = JSON.parse(msg.body);
+          $('pre-processes').textContent = fmt(data.slice(0, 5)); // show top 5
+          setBadge('badge-processes', `${data.length} processes`, true);
+          bumpCount();
+        });
+
+        // /user/queue/history (personal reply channel)
+        stompClient.subscribe('/user/queue/history', msg => {
+          const data = JSON.parse(msg.body);
+          $('pre-history').textContent = fmt(data);
+          setBadge('badge-history', `${data.length} snapshots`, true);
+          bumpCount();
+        });
+      },
+
+      onDisconnect: () => {
+        setStatus('disconnected', 'Disconnected');
+        $('btn-disconnect').disabled = true;
+        $('btn-reconnect').disabled  = false;
+        ['system','network','processes'].forEach(t =>
+          setBadge(`badge-${t}`, 'disconnected'));
+      },
+
+      onStompError: (frame) => {
+        setStatus('disconnected', `STOMP error: ${frame.headers?.message ?? 'unknown'}`);
+        console.error('STOMP error', frame);
+      },
+
+      onWebSocketError: (event) => {
+        setStatus('disconnected', 'WebSocket error — check console');
+        console.error('WebSocket error', event);
+      },
+
+      debug: str => console.debug('[STOMP]', str),
+    });
+  }
+
+  function connect() {
+    setStatus('connecting', 'Connecting…');
+    stompClient = createClient();
+    stompClient.activate();
+  }
+
+  function disconnect() {
+    if (stompClient) {
+      stompClient.deactivate();
+      stompClient = null;
+    }
+  }
+
+  // ── Button wiring ────────────────────────────────────────
+  $('btn-disconnect').addEventListener('click', disconnect);
+
+  $('btn-reconnect').addEventListener('click', () => {
+    disconnect();
+    connect();
+  });
+
+  $('btn-request').addEventListener('click', () => {
+    if (!stompClient?.connected) return alert('Not connected');
+    stompClient.publish({ destination: '/app/metrics/request', body: '' });
+  });
+
+  $('btn-history').addEventListener('click', () => {
+    if (!stompClient?.connected) return alert('Not connected');
+    stompClient.publish({
+      destination: '/app/metrics/history',
+      body: JSON.stringify({ type: 'CPU_USAGE', hours: '1' })
+    });
+  });
+
+  $('btn-clear').addEventListener('click', () => {
+    ['system','network','processes','history'].forEach(t => {
+      $(`pre-${t}`).textContent = 'Cleared.';
+      setBadge(`badge-${t}`, 'cleared');
+    });
+    msgCount = 0;
+    $('msg-count').textContent = '0 messages';
+  });
+
+  // ── Auto-connect on load ─────────────────────────────────
+  connect();
+</script>
+</body>
+</html>

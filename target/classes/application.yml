@@ -1,0 +1,51 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: serverwatch
+  profiles:
+    active: dev
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+serverwatch:
+  collector:
+    interval-ms: 2000
+    history-retention-hours: 24
+  docker:
+    socket-path: unix:///var/run/docker.sock
+  alert:
+    cooldown-minutes: 5
+    evaluation-interval-ms: 5000
+  git:
+    base-path: /opt/repos
+  security:
+    jwt-secret: ${JWT_SECRET:change-me-in-production-this-is-dev-only}
+    jwt-expiration-ms: 86400000

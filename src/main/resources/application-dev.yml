@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/serverwatch
+    username: serverwatch
+    password: serverwatch
+  jpa:
+    show-sql: true
+
+serverwatch:
+  git:
+    base-path: ${user.home}/serverwatch-repos
+  filemanager:
+    # On dev (Windows/Linux workstation) use paths that actually exist
+    allowed-roots:
+      - ${user.home}
+      - ${java.io.tmpdir}
+    readonly-roots: []
+    denied-paths: []
+
+logging:
+  level:
+    com.serverwatch: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.eclipse.jgit: WARN
