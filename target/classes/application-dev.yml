@@ -9,6 +9,13 @@ spring:
 serverwatch:
   git:
     base-path: ${user.home}/serverwatch-repos
+  filemanager:
+    # On dev (Windows/Linux workstation) use paths that actually exist
+    allowed-roots:
+      - ${user.home}
+      - ${java.io.tmpdir}
+    readonly-roots: []
+    denied-paths: []
 
 logging:
   level:

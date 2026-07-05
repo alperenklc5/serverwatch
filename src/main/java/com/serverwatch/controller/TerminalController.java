@@ -41,7 +41,7 @@ public class TerminalController {
     @GetMapping("/sessions")
     public ResponseEntity<ApiResponse<List<TerminalSessionDTO>>> listSessions() {
         List<TerminalSessionDTO> sessions = terminalService.listSessions();
-        return ResponseEntity.ok(ApiResponse.success(sessions));
+        return ResponseEntity.ok(ApiResponse.ok(sessions));
     }
 
     /**
@@ -52,7 +52,7 @@ public class TerminalController {
      */
     @GetMapping("/sessions/{id}")
     public ResponseEntity<ApiResponse<TerminalSessionDTO>> getSession(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(terminalService.getSession(id)));
+        return ResponseEntity.ok(ApiResponse.ok(terminalService.getSession(id)));
     }
 
     /**
@@ -65,7 +65,7 @@ public class TerminalController {
     @GetMapping("/sessions/{id}/buffer")
     public ResponseEntity<ApiResponse<String>> getBuffer(@PathVariable String id) {
         String buffer = terminalService.getBuffer(id);
-        return ResponseEntity.ok(ApiResponse.success(buffer));
+        return ResponseEntity.ok(ApiResponse.ok(buffer));
     }
 
     // ── Session termination ────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ public class TerminalController {
     public ResponseEntity<ApiResponse<Void>> closeSession(@PathVariable String id) {
         log.info("REST: force-closing terminal session {}", id);
         terminalService.closeSession(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     // ── Shell discovery ────────────────────────────────────────────────────────
@@ -94,6 +94,6 @@ public class TerminalController {
      */
     @GetMapping("/shells")
     public ResponseEntity<ApiResponse<List<String>>> getAvailableShells() {
-        return ResponseEntity.ok(ApiResponse.success(terminalService.getAvailableShells()));
+        return ResponseEntity.ok(ApiResponse.ok(terminalService.getAvailableShells()));
     }
 }
