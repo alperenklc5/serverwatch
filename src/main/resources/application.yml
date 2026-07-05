@@ -35,6 +35,12 @@ spring:
           starttls:
             enable: true
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB
+      max-request-size: 500MB
+
 serverwatch:
   collector:
     interval-ms: 2000
@@ -78,10 +84,3 @@ serverwatch:
     session-timeout-minutes: 30
     max-sessions: 10
     max-buffer-bytes: 1048576
-
-spring:
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 500MB
-      max-request-size: 500MB
