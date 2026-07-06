@@ -1,0 +1,24 @@
+import { Outlet } from 'react-router-dom'
+import Sidebar from './Sidebar'
+import Header from './Header'
+import MobileNav from './MobileNav'
+import Toaster from '../ui/Toast'
+import { useAlertSocket } from '../../hooks/useAlertSocket'
+
+export default function MainLayout() {
+  useAlertSocket()
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-bg-primary">
+      <Sidebar />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">
+          <Outlet />
+        </main>
+      </div>
+      <MobileNav />
+      <Toaster />
+    </div>
+  )
+}
