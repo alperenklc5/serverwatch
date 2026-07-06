@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { login as apiLogin, logout as apiLogout, getMe, refresh } from '../api/auth'
 import { setTokens, clearTokens, getRefreshToken } from '../api/axios'
+import { TOKEN_KEY } from '../lib/constants'
 import type { User } from '../types'
 
 interface AuthState {
@@ -33,6 +34,11 @@ export const useAuthStore = create<AuthState>(set => ({
   },
 
   checkAuth: async () => {
+    const accessToken = localStorage.getItem(TOKEN_KEY)
+    if (!accessToken) {
+      set({ user: null, isAuthenticated: false, isLoading: false })
+      return
+    }
     set({ isLoading: true })
     try {
       const user = await getMe()
@@ -50,6 +56,7 @@ export const useAuthStore = create<AuthState>(set => ({
           set({ user: null, isAuthenticated: false, isLoading: false })
         }
       } else {
+        clearTokens()
         set({ user: null, isAuthenticated: false, isLoading: false })
       }
     }
