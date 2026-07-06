@@ -3,6 +3,7 @@ import { Client, type StompSubscription } from '@stomp/stompjs'
 import { getAccessToken } from '../api/axios'
 import { WS_URL } from '../lib/constants'
 import { useMetricsStore } from '../stores/metricsStore'
+import { useAuthStore } from '../stores/authStore'
 
 export interface WebSocketHook {
   isConnected: boolean
@@ -14,8 +15,10 @@ export function useWebSocket(): WebSocketHook {
   const setConnected = useMetricsStore(s => s.setConnected)
   const isConnected = useMetricsStore(s => s.isConnected)
   const reconnectCount = useRef(0)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
   useEffect(() => {
+    if (!isAuthenticated) return
     const token = getAccessToken()
     if (!token) return
 
@@ -44,7 +47,7 @@ export function useWebSocket(): WebSocketHook {
       clientRef.current = null
       setConnected(false)
     }
-  }, [setConnected])
+  }, [isAuthenticated, setConnected])
 
   const subscribe = useCallback(
     <T>(topic: string, callback: (data: T) => void): StompSubscription | null => {
