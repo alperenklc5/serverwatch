@@ -73,8 +73,15 @@ public class TerminalService {
         }
 
         String sessionId = UUID.randomUUID().toString();
-        TerminalSession session = new TerminalSession(
-                sessionId, username, wsSessionId, request, messagingTemplate, properties);
+        log.debug("Spawning PTY: id={} user={} shell={} wsSession={}", sessionId, username, shell, wsSessionId);
+        TerminalSession session;
+        try {
+            session = new TerminalSession(
+                    sessionId, username, wsSessionId, request, messagingTemplate, properties);
+        } catch (Exception e) {
+            log.error("PTY spawn failed: id={} user={} shell={} cause={}", sessionId, username, shell, e.getMessage(), e);
+            throw e;
+        }
         sessions.put(sessionId, session);
 
         log.info("Terminal session created: id={} user={} shell={}", sessionId, username, shell);

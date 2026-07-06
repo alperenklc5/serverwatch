@@ -10,7 +10,6 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 import java.io.IOException;
@@ -46,13 +45,10 @@ public class TerminalWebSocketController {
     /**
      * Creates a new PTY session and notifies the requesting client.
      *
-     * <p>Restricted to {@code ROLE_ADMIN}: terminal access is a privileged operation.
-     *
      * @param request   shell, cwd, and initial dimensions (all optional)
      * @param accessor  STOMP headers — used to extract the WebSocket session ID
      * @param principal authenticated STOMP user (set by {@link com.serverwatch.security.WebSocketAuthInterceptor})
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @MessageMapping("/terminal/create")
     @SendToUser(value = "/queue/terminal-created", broadcast = false)
     public TerminalOutputMessage createSession(@Payload CreateSessionRequest request,
