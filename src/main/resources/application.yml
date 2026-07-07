@@ -2,6 +2,8 @@ server:
   port: 8090
 
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.method.MethodSecurityAutoConfiguration
   application:
     name: serverwatch
   profiles:
