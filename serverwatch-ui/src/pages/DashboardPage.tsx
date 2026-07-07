@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { Cpu, MemoryStick, HardDrive, Network } from 'lucide-react'
-import { useMetrics } from '../hooks/useMetrics'
 import { useMetricsStore } from '../stores/metricsStore'
 import { formatPercent, formatBytes } from '../lib/formatters'
 import StatCard from '../components/charts/StatCard'
@@ -12,8 +11,6 @@ import ProcessTable from '../components/charts/ProcessTable'
 import ServerInfoBar from '../components/charts/ServerInfoBar'
 
 export default function DashboardPage() {
-  useMetrics() // initiates WebSocket connection + subscriptions
-
   const systemMetric  = useMetricsStore(s => s.systemMetric)
   const systemHistory = useMetricsStore(s => s.systemHistory)
   const networkPrimary = useMetricsStore(s => s.networkPrimary)

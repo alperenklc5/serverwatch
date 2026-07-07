@@ -4,8 +4,10 @@ import Header from './Header'
 import MobileNav from './MobileNav'
 import Toaster from '../ui/Toast'
 import { useAlertSocket } from '../../hooks/useAlertSocket'
+import { useMetrics } from '../../hooks/useMetrics'
 
 export default function MainLayout() {
+  useMetrics()
   useAlertSocket()
 
   return (
