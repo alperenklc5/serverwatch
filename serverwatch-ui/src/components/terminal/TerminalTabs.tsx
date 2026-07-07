@@ -1,4 +1,4 @@
-import { Plus, X, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2, Ban } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 export interface TabInfo {
@@ -16,12 +16,13 @@ interface TerminalTabsProps {
   onSelect:      (id: string) => void
   onClose:       (id: string) => void
   onNew:         () => void
+  onCancel:      () => void
   onShellChange: (shell: string) => void
 }
 
 export default function TerminalTabs({
   tabs, activeId, shells, selectedShell, isCreating,
-  onSelect, onClose, onNew, onShellChange,
+  onSelect, onClose, onNew, onCancel, onShellChange,
 }: TerminalTabsProps) {
   return (
     <div className="flex items-center h-10 bg-bg-secondary border-b border-border overflow-hidden flex-shrink-0">
@@ -55,18 +56,34 @@ export default function TerminalTabs({
 
       {/* New tab button */}
       <div className="flex items-center gap-1 px-2 flex-shrink-0 border-l border-border h-full">
-        <button
-          onClick={onNew}
-          disabled={isCreating}
-          title="New terminal (Ctrl+Shift+T)"
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors disabled:opacity-50"
-        >
-          {isCreating
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            : <Plus    className="w-3.5 h-3.5" />
-          }
-          <span className="hidden sm:inline">New</span>
-        </button>
+        {isCreating ? (
+          <>
+            <button
+              disabled
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-text-secondary opacity-50 cursor-not-allowed"
+            >
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span className="hidden sm:inline">New</span>
+            </button>
+            <button
+              onClick={onCancel}
+              title="Cancel session creation"
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-text-secondary hover:text-accent-red hover:bg-bg-tertiary transition-colors"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cancel</span>
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onNew}
+            title="New terminal (Ctrl+Shift+T)"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">New</span>
+          </button>
+        )}
 
         {/* Shell selector */}
         {shells.length > 1 && (

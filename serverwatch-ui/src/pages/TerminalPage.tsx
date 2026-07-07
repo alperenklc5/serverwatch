@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Maximize2, Minimize2, Wifi, WifiOff } from 'lucide-react'
 import { getTerminalShells } from '../api/terminal'
 import { useTerminalSocket } from '../hooks/useTerminalSocket'
+import { useMetricsStore } from '../stores/metricsStore'
 import Terminal from '../components/terminal/Terminal'
 import TerminalTabs, { type TabInfo } from '../components/terminal/TerminalTabs'
 import TerminalSettingsPanel, { DEFAULT_SETTINGS, type TerminalSettings } from '../components/terminal/TerminalSettings'
@@ -17,6 +18,7 @@ export default function TerminalPage() {
   const [isFullscreen, setIsFullscreen]   = useState(false)
 
   const socket          = useTerminalSocket()
+  const wsConnected     = useMetricsStore(s => s.isConnected)
   const creationPending = useRef(false)
 
   // ── fetch available shells on load ──────────────────────────────────────
@@ -30,11 +32,17 @@ export default function TerminalPage() {
 
   // ── create a new session ────────────────────────────────────────────────
   const createTab = useCallback(() => {
-    if (!socket.isConnected || isCreating || creationPending.current) return
+    if (isCreating || creationPending.current) return
     setIsCreating(true)
     creationPending.current = true
     socket.createSession(selectedShell, 80, 24)
-  }, [socket.isConnected, socket.createSession, isCreating, selectedShell])
+  }, [socket.createSession, isCreating, selectedShell])
+
+  // ── cancel a stuck creation ─────────────────────────────────────────────
+  const cancelCreating = useCallback(() => {
+    setIsCreating(false)
+    creationPending.current = false
+  }, [])
 
   // ── receive session-created ──────────────────────────────────────────────
   useEffect(() => {
@@ -52,11 +60,11 @@ export default function TerminalPage() {
   // ── auto-open first terminal when socket connects ───────────────────────
   const autoStarted = useRef(false)
   useEffect(() => {
-    if (socket.isConnected && !autoStarted.current) {
+    if (wsConnected && socket.isConnected && !autoStarted.current) {
       autoStarted.current = true
       createTab()
     }
-  }, [socket.isConnected, createTab])
+  }, [wsConnected, socket.isConnected, createTab])
 
   // ── close a tab ─────────────────────────────────────────────────────────
   const closeTab = useCallback((sessionId: string) => {
@@ -125,12 +133,13 @@ export default function TerminalPage() {
             onSelect={setActiveId}
             onClose={closeTab}
             onNew={createTab}
+            onCancel={cancelCreating}
             onShellChange={setSelectedShell}
           />
         </div>
         {/* Right controls — inline with tab bar */}
         <div className="flex items-center gap-1 px-2 h-10 flex-shrink-0">
-          {socket.isConnected
+          {wsConnected
             ? <span title="Connected">   <Wifi    className="w-3.5 h-3.5 text-accent-green"  /></span>
             : <span title="Disconnected"><WifiOff className="w-3.5 h-3.5 text-text-tertiary" /></span>
           }
@@ -152,19 +161,13 @@ export default function TerminalPage() {
       <div className="flex-1 min-h-0 overflow-hidden relative" style={{ background: '#08080d' }}>
         {tabs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-text-tertiary">
-            {socket.isConnected ? (
-              <>
-                <span className="text-sm">No open sessions</span>
-                <button
-                  onClick={createTab}
-                  className="px-4 py-2 text-sm font-medium text-white bg-accent-blue hover:bg-accent-blue/80 rounded-lg transition-colors"
-                >
-                  Open Terminal
-                </button>
-              </>
-            ) : (
-              <span className="text-sm animate-pulse">Connecting…</span>
-            )}
+            <span className="text-sm">No open sessions</span>
+            <button
+              onClick={createTab}
+              className="px-4 py-2 text-sm font-medium text-white bg-accent-blue hover:bg-accent-blue/80 rounded-lg transition-colors"
+            >
+              Open Terminal
+            </button>
           </div>
         ) : (
           tabs.map(tab => (
