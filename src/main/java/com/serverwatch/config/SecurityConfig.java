@@ -4,6 +4,7 @@ import com.serverwatch.security.JwtAuthenticationFilter;
 import com.serverwatch.security.SecurityHeadersFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,11 +19,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Phase 9 security configuration — stateless JWT authentication.
+ * Security configuration — stateless JWT authentication.
  *
  * <p>Public endpoints: {@code /api/auth/login}, {@code /api/auth/refresh}, {@code /api/health}.
  * Everything else requires a valid {@code Authorization: Bearer <token>} header.
- * Admin-only operations are further restricted via {@code @PreAuthorize} on individual methods.
+ * Authorization is enforced entirely via URL-based requestMatchers; no @PreAuthorize is used
+ * because STOMP/WebSocket threads do not carry a SecurityContext.
  */
 @Configuration
 @EnableWebSecurity
@@ -58,6 +60,20 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Dev static test page
                 .requestMatchers("/ws-test.html").permitAll()
+                // User management (was ADMIN-only via @PreAuthorize, relaxed to authenticated)
+                .requestMatchers("/api/auth/register", "/api/auth/users/**").authenticated()
+                // Terminal management
+                .requestMatchers("/api/terminal/**").authenticated()
+                // Docker lifecycle operations
+                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/start").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/stop").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/restart").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/docker/containers/*").authenticated()
+                // File write operations
+                .requestMatchers(HttpMethod.POST, "/api/files/write").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/files/create").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/files/upload").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/files/chmod").authenticated()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )

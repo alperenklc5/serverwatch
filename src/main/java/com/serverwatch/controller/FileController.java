@@ -6,7 +6,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -139,7 +138,6 @@ public class FileController {
      * Writes text content to a file (creates it if it does not exist).
      * An atomic rename is used; the previous content is backed up as {@code *.sw-backup}.
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/write")
     public ResponseEntity<ApiResponse<FileEntryDTO>> write(
             @RequestBody FileOperationRequest req) {
@@ -157,7 +155,6 @@ public class FileController {
      * Creates a new file or directory.
      * Required fields: {@code path} (parent dir), {@code name}, {@code type} (FILE|DIRECTORY).
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<FileEntryDTO>> create(
             @RequestBody FileOperationRequest req) {
@@ -180,7 +177,6 @@ public class FileController {
      * @param path      absolute path to delete
      * @param recursive required for non-empty directories (default false)
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestParam String path,
@@ -194,7 +190,6 @@ public class FileController {
      * Moves or renames a file or directory.
      * Required fields: {@code sourcePath}, {@code targetPath}.
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/move")
     public ResponseEntity<ApiResponse<FileEntryDTO>> move(
             @RequestBody FileOperationRequest req) {
@@ -208,7 +203,6 @@ public class FileController {
      * Copies a file or directory tree.
      * Required fields: {@code sourcePath}, {@code targetPath}.
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/copy")
     public ResponseEntity<ApiResponse<FileEntryDTO>> copy(
             @RequestBody FileOperationRequest req) {
@@ -224,7 +218,6 @@ public class FileController {
      * @param targetPath form field — absolute directory path on the server
      * @param file       the uploaded file
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<UploadResponseDTO>> upload(
             @RequestParam("targetPath") String targetPath,
@@ -239,7 +232,6 @@ public class FileController {
      * Changes POSIX permissions on a file or directory (Linux only).
      * Required fields: {@code path}, {@code permissions} (octal, e.g. {@code 755}).
      */
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/chmod")
     public ResponseEntity<ApiResponse<FileEntryDTO>> chmod(
             @RequestBody FileOperationRequest req) {

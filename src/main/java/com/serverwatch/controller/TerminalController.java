@@ -5,7 +5,6 @@ import com.serverwatch.model.dto.TerminalSessionDTO;
 import com.serverwatch.service.TerminalService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -77,7 +76,6 @@ public class TerminalController {
      * @param id the terminal session UUID
      */
     @DeleteMapping("/sessions/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> closeSession(@PathVariable String id) {
         log.info("REST: force-closing terminal session {}", id);
         terminalService.closeSession(id);

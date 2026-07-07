@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -95,7 +94,6 @@ public class AuthController {
 
     // ---- admin ----
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserDTO>> register(
             @Valid @RequestBody RegisterRequest request) {
@@ -104,27 +102,23 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(created));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<List<UserDTO>>> listUsers() {
         return ResponseEntity.ok(ApiResponse.ok(authService.getAllUsers()));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/{id}/enable")
     public ResponseEntity<ApiResponse<Void>> enableUser(@PathVariable Long id) {
         authService.enableUser(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/{id}/disable")
     public ResponseEntity<ApiResponse<Void>> disableUser(@PathVariable Long id) {
         authService.disableUser(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         authService.deleteUser(id);

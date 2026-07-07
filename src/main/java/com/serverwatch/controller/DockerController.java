@@ -8,7 +8,6 @@ import com.serverwatch.model.dto.*;
 import com.serverwatch.service.DockerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -81,14 +80,12 @@ public class DockerController {
     // Lifecycle operations
     // =========================================================================
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/containers/{id}/start")
     public ResponseEntity<ApiResponse<Void>> startContainer(@PathVariable String id) {
         dockerService.startContainer(id);
         return ok(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/containers/{id}/stop")
     public ResponseEntity<ApiResponse<Void>> stopContainer(
             @PathVariable String id,
@@ -97,7 +94,6 @@ public class DockerController {
         return ok(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/containers/{id}/restart")
     public ResponseEntity<ApiResponse<Void>> restartContainer(
             @PathVariable String id,
@@ -106,21 +102,18 @@ public class DockerController {
         return ok(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/containers/{id}/pause")
     public ResponseEntity<ApiResponse<Void>> pauseContainer(@PathVariable String id) {
         dockerService.pauseContainer(id);
         return ok(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/containers/{id}/unpause")
     public ResponseEntity<ApiResponse<Void>> unpauseContainer(@PathVariable String id) {
         dockerService.unpauseContainer(id);
         return ok(null);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/containers/{id}")
     public ResponseEntity<ApiResponse<Void>> removeContainer(
             @PathVariable String id,
