@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/authStore'
 export interface WebSocketHook {
   isConnected: boolean
   subscribe: <T>(topic: string, callback: (data: T) => void) => StompSubscription | null
+  publish: (destination: string, body: string) => void
 }
 
 export function useWebSocket(): WebSocketHook {
@@ -63,5 +64,9 @@ export function useWebSocket(): WebSocketHook {
     [],
   )
 
-  return { isConnected, subscribe }
+  const publish = useCallback((destination: string, body: string): void => {
+    clientRef.current?.publish({ destination, body })
+  }, [])
+
+  return { isConnected, subscribe, publish }
 }

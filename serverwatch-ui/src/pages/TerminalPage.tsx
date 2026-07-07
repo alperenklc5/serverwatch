@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Maximize2, Minimize2, Wifi, WifiOff } from 'lucide-react'
 import { getTerminalShells } from '../api/terminal'
+import { useWebSocket } from '../hooks/useWebSocket'
 import { useTerminalSocket } from '../hooks/useTerminalSocket'
-import { useMetricsStore } from '../stores/metricsStore'
 import Terminal from '../components/terminal/Terminal'
 import TerminalTabs, { type TabInfo } from '../components/terminal/TerminalTabs'
 import TerminalSettingsPanel, { DEFAULT_SETTINGS, type TerminalSettings } from '../components/terminal/TerminalSettings'
@@ -17,8 +17,8 @@ export default function TerminalPage() {
   const [settings, setSettings]           = useState<TerminalSettings>(DEFAULT_SETTINGS)
   const [isFullscreen, setIsFullscreen]   = useState(false)
 
-  const socket          = useTerminalSocket()
-  const wsConnected     = useMetricsStore(s => s.isConnected)
+  const ws              = useWebSocket()
+  const socket          = useTerminalSocket(ws)
   const creationPending = useRef(false)
 
   // ── fetch available shells on load ──────────────────────────────────────
@@ -60,11 +60,11 @@ export default function TerminalPage() {
   // ── auto-open first terminal when socket connects ───────────────────────
   const autoStarted = useRef(false)
   useEffect(() => {
-    if (wsConnected && socket.isConnected && !autoStarted.current) {
+    if (socket.isConnected && !autoStarted.current) {
       autoStarted.current = true
       createTab()
     }
-  }, [wsConnected, socket.isConnected, createTab])
+  }, [socket.isConnected, createTab])
 
   // ── close a tab ─────────────────────────────────────────────────────────
   const closeTab = useCallback((sessionId: string) => {
@@ -139,7 +139,7 @@ export default function TerminalPage() {
         </div>
         {/* Right controls — inline with tab bar */}
         <div className="flex items-center gap-1 px-2 h-10 flex-shrink-0">
-          {wsConnected
+          {socket.isConnected
             ? <span title="Connected">   <Wifi    className="w-3.5 h-3.5 text-accent-green"  /></span>
             : <span title="Disconnected"><WifiOff className="w-3.5 h-3.5 text-text-tertiary" /></span>
           }
