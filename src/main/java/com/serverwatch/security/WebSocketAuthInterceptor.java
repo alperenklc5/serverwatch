@@ -12,11 +12,13 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -45,6 +47,19 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor =
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
+        // For every STOMP message (SEND, SUBSCRIBE, etc.), restore the authentication
+        // on the current thread so any downstream code can find it in SecurityContextHolder.
+        // Spring carries the principal on the STOMP session but does NOT populate
+        // SecurityContextHolder on message-processing threads — we do it here.
+        if (accessor != null) {
+            Principal user = accessor.getUser();
+            if (user != null) {
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication((Authentication) user);
+                SecurityContextHolder.setContext(context);
+            }
+        }
 
         if (accessor == null || !StompCommand.CONNECT.equals(accessor.getCommand())) {
             return message;
