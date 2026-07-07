@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
-import { AlertTriangle, Zap, Volume2, VolumeX } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { AlertTriangle, Zap } from 'lucide-react'
 import { useAlertStore } from '../../stores/alertStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import type { AlertEvent } from '../../types'
 import { formatRelative } from '../../lib/formatters'
 
@@ -44,22 +45,27 @@ function AlertCard({ alert }: { alert: AlertEvent }) {
 }
 
 export default function AlertLiveFeed() {
-  const recentAlerts  = useAlertStore(s => s.recentAlerts)
-  const clearUnread   = useAlertStore(s => s.clearUnread)
-  const [sound, setSound] = useState(false)
-  const audioRef      = useRef<AudioContext | null>(null)
+  const recentAlerts        = useAlertStore(s => s.recentAlerts)
+  const clearUnread         = useAlertStore(s => s.clearUnread)
+  const soundEnabled        = useSettingsStore(s => s.soundEnabled)
+  const notificationsEnabled = useSettingsStore(s => s.notificationsEnabled)
+  const audioRef            = useRef<AudioContext | null>(null)
 
   // Clear unread badge when this feed is visible
   useEffect(() => { clearUnread() }, [clearUnread])
 
-  // Play sound on new alerts (track count in ref to avoid stale closure)
-  const prevLenRef = useRef(recentAlerts.length)
-  const soundRef   = useRef(sound)
-  useEffect(() => { soundRef.current = sound }, [sound])
+  // Play sound / show notification on new alerts
+  const prevLenRef          = useRef(recentAlerts.length)
+  const soundRef            = useRef(soundEnabled)
+  const notifRef            = useRef(notificationsEnabled)
+  useEffect(() => { soundRef.current = soundEnabled }, [soundEnabled])
+  useEffect(() => { notifRef.current = notificationsEnabled }, [notificationsEnabled])
 
   useEffect(() => {
     if (recentAlerts.length > prevLenRef.current) {
+      const newAlerts = recentAlerts.slice(0, recentAlerts.length - prevLenRef.current)
       prevLenRef.current = recentAlerts.length
+
       if (soundRef.current) {
         try {
           if (!audioRef.current) audioRef.current = new AudioContext()
@@ -75,26 +81,27 @@ export default function AlertLiveFeed() {
           osc.stop(ctx.currentTime + 0.3)
         } catch { /* ignore AudioContext errors */ }
       }
+
+      if (notifRef.current && 'Notification' in window && Notification.permission === 'granted') {
+        const latest = newAlerts[0]
+        if (latest) {
+          try {
+            new Notification(`ServerWatch — ${latest.severity}`, {
+              body: latest.message,
+              icon: '/favicon.ico',
+              tag: String(latest.id),
+            })
+          } catch { /* ignore */ }
+        }
+      }
     }
   }, [recentAlerts.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-text-primary">Live Feed</h2>
-          <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
-        </div>
-        <button
-          onClick={() => setSound(s => !s)}
-          title={sound ? 'Disable sound' : 'Enable sound'}
-          className="p-1.5 rounded text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-        >
-          {sound
-            ? <Volume2 className="w-4 h-4" />
-            : <VolumeX className="w-4 h-4" />
-          }
-        </button>
+      <div className="flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-text-primary">Live Feed</h2>
+        <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
       </div>
 
       {recentAlerts.length === 0 ? (

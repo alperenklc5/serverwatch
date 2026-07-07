@@ -3,9 +3,10 @@ import { Maximize2, Minimize2, Wifi, WifiOff } from 'lucide-react'
 import { getTerminalShells } from '../api/terminal'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { useTerminalSocket } from '../hooks/useTerminalSocket'
+import { useSettingsStore } from '../stores/settingsStore'
 import Terminal from '../components/terminal/Terminal'
 import TerminalTabs, { type TabInfo } from '../components/terminal/TerminalTabs'
-import TerminalSettingsPanel, { DEFAULT_SETTINGS, type TerminalSettings } from '../components/terminal/TerminalSettings'
+import TerminalSettingsPanel, { type TerminalSettings } from '../components/terminal/TerminalSettings'
 import { cn } from '../lib/utils'
 
 export default function TerminalPage() {
@@ -14,8 +15,18 @@ export default function TerminalPage() {
   const [shells, setShells]               = useState<string[]>(['bash'])
   const [selectedShell, setSelectedShell] = useState('bash')
   const [isCreating, setIsCreating]       = useState(false)
-  const [settings, setSettings]           = useState<TerminalSettings>(DEFAULT_SETTINGS)
   const [isFullscreen, setIsFullscreen]   = useState(false)
+
+  const terminalPrefs = useSettingsStore(s => s.terminalPrefs)
+  const setTerminalPrefs = useSettingsStore(s => s.setTerminalPrefs)
+
+  // Local override for the in-page settings panel; synced back to store on apply
+  const [settings, setSettings] = useState<TerminalSettings>(terminalPrefs)
+
+  function handleSettingsUpdate(s: TerminalSettings) {
+    setSettings(s)
+    setTerminalPrefs(s)
+  }
 
   const ws              = useWebSocket()
   const socket          = useTerminalSocket(ws)
@@ -143,7 +154,7 @@ export default function TerminalPage() {
             ? <span title="Connected">   <Wifi    className="w-3.5 h-3.5 text-accent-green"  /></span>
             : <span title="Disconnected"><WifiOff className="w-3.5 h-3.5 text-text-tertiary" /></span>
           }
-          <TerminalSettingsPanel settings={settings} onUpdate={setSettings} />
+          <TerminalSettingsPanel settings={settings} onUpdate={handleSettingsUpdate} />
           <button
             onClick={() => setIsFullscreen(v => !v)}
             title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}

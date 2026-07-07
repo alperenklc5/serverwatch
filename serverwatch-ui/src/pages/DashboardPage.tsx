@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Cpu, MemoryStick, HardDrive, Network } from 'lucide-react'
 import { useMetricsStore } from '../stores/metricsStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { formatPercent, formatBytes } from '../lib/formatters'
 import StatCard from '../components/charts/StatCard'
 import CpuChart from '../components/charts/CpuChart'
@@ -11,10 +12,11 @@ import ProcessTable from '../components/charts/ProcessTable'
 import ServerInfoBar from '../components/charts/ServerInfoBar'
 
 export default function DashboardPage() {
-  const systemMetric  = useMetricsStore(s => s.systemMetric)
-  const systemHistory = useMetricsStore(s => s.systemHistory)
+  const systemMetric   = useMetricsStore(s => s.systemMetric)
+  const systemHistory  = useMetricsStore(s => s.systemHistory)
   const networkPrimary = useMetricsStore(s => s.networkPrimary)
-  const processes     = useMetricsStore(s => s.processes)
+  const processes      = useMetricsStore(s => s.processes)
+  const widgets        = useSettingsStore(s => s.dashboardWidgets)
 
   // Stat card derived values
   const cpuValue   = systemMetric?.cpuUsagePercent ?? 0
@@ -50,82 +52,105 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      {/* Server Info Bar */}
-      <ServerInfoBar />
+      {widgets.serverInfo && <ServerInfoBar />}
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          title="CPU"
-          value={cpuValue}
-          format={formatPercent}
-          subtitle={systemMetric ? `${systemMetric.cpuCoreCount} cores` : '—'}
-          icon={Cpu}
-          color="blue"
-          trend={cpuTrend}
-          alertThreshold={85}
-        />
-        <StatCard
-          title="Memory"
-          value={memValue}
-          format={formatPercent}
-          subtitle={memSubtitle}
-          icon={MemoryStick}
-          color="green"
-          trend={memTrend}
-          alertThreshold={90}
-        />
-        <StatCard
-          title="Disk"
-          value={diskPct}
-          format={formatPercent}
-          subtitle={diskSubtitle}
-          icon={HardDrive}
-          color="amber"
-          alertThreshold={85}
-        />
-        <StatCard
-          title="Network"
-          value={netTotal}
-          format={v => `${formatBytes(v)}/s`}
-          subtitle={useMemo(() => {
-            const last = networkPrimary[networkPrimary.length - 1]
-            if (!last) return '—'
-            return `↑${formatBytes(last.tx)}/s  ↓${formatBytes(last.rx)}/s`
-          }, [networkPrimary])}
-          icon={Network}
-          color="cyan"
-          trend={netTrend}
-        />
-      </div>
+      {/* Stat Cards — only shown widgets */}
+      {(widgets.cpu || widgets.memory || widgets.disk || widgets.network) && (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          {widgets.cpu && (
+            <StatCard
+              title="CPU"
+              value={cpuValue}
+              format={formatPercent}
+              subtitle={systemMetric ? `${systemMetric.cpuCoreCount} cores` : '—'}
+              icon={Cpu}
+              color="blue"
+              trend={cpuTrend}
+              alertThreshold={85}
+            />
+          )}
+          {widgets.memory && (
+            <StatCard
+              title="Memory"
+              value={memValue}
+              format={formatPercent}
+              subtitle={memSubtitle}
+              icon={MemoryStick}
+              color="green"
+              trend={memTrend}
+              alertThreshold={90}
+            />
+          )}
+          {widgets.disk && (
+            <StatCard
+              title="Disk"
+              value={diskPct}
+              format={formatPercent}
+              subtitle={diskSubtitle}
+              icon={HardDrive}
+              color="amber"
+              alertThreshold={85}
+            />
+          )}
+          {widgets.network && (
+            <StatCard
+              title="Network"
+              value={netTotal}
+              format={v => `${formatBytes(v)}/s`}
+              subtitle={useMemo(() => {
+                const last = networkPrimary[networkPrimary.length - 1]
+                if (!last) return '—'
+                return `↑${formatBytes(last.tx)}/s  ↓${formatBytes(last.rx)}/s`
+              }, [networkPrimary])}
+              icon={Network}
+              color="cyan"
+              trend={netTrend}
+            />
+          )}
+        </div>
+      )}
 
       {/* Charts row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="CPU Usage">
-          <CpuChart history={systemHistory} />
-        </ChartCard>
-        <ChartCard title="Memory Usage">
-          <MemoryChart history={systemHistory} />
-        </ChartCard>
-      </div>
+      {(widgets.cpu || widgets.memory) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {widgets.cpu && (
+            <ChartCard title="CPU Usage">
+              <CpuChart history={systemHistory} />
+            </ChartCard>
+          )}
+          {widgets.memory && (
+            <ChartCard title="Memory Usage">
+              <MemoryChart history={systemHistory} />
+            </ChartCard>
+          )}
+        </div>
+      )}
 
       {/* Charts row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Network Traffic">
-          <NetworkChart history={networkPrimary} />
-        </ChartCard>
-        <ChartCard title="Disk Usage" noPad>
-          <DiskChart disks={systemMetric?.diskInfos ?? []} />
-        </ChartCard>
-      </div>
+      {(widgets.network || widgets.disk) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {widgets.network && (
+            <ChartCard title="Network Traffic">
+              <NetworkChart history={networkPrimary} />
+            </ChartCard>
+          )}
+          {widgets.disk && (
+            <ChartCard title="Disk Usage" noPad>
+              <DiskChart disks={systemMetric?.diskInfos ?? []} />
+            </ChartCard>
+          )}
+        </div>
+      )}
 
       {/* Process Table */}
-      <div className="bg-bg-secondary border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold text-text-primary">Top Processes</h2>
+      {widgets.processes && (
+        <div className="bg-bg-secondary border border-border rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="text-sm font-semibold text-text-primary">Top Processes</h2>
+          </div>
+          <ProcessTable processes={processes} />
         </div>
-        <ProcessTable processes={processes} />
-      </div>
+      )}
     </div>
   )
 }
