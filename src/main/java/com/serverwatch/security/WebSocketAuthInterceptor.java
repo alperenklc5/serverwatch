@@ -13,6 +13,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -69,7 +70,9 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         UsernamePasswordAuthenticationToken principal = new UsernamePasswordAuthenticationToken(
                 user, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
         accessor.setUser(principal);
-        SecurityContextHolder.getContext().setAuthentication(principal);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(principal);
+        SecurityContextHolder.setContext(context);
 
         log.debug("WebSocket authenticated for user '{}'", username);
         return message;
