@@ -29,8 +29,11 @@ interface CtxMenu {
   entry: FileEntry | null
 }
 
+const DEFAULT_PATH = '/hostfs/opt'
+
 export default function FileBrowser() {
-  const [currentPath, setCurrentPath] = useState('/')
+  const [currentPath, setCurrentPath] = useState(DEFAULT_PATH)
+  const [roots, setRoots]             = useState<string[]>([])
   const [listing, setListing]         = useState<DirectoryListing | null>(null)
   const [loading, setLoading]         = useState(true)
   const [showHidden, setShowHidden]   = useState(false)
@@ -72,11 +75,14 @@ export default function FileBrowser() {
     }
   }, [showHidden])
 
-  // Initial load: try to get a sensible root
+  // Initial load: fetch available roots then open the default path
   useEffect(() => {
     getRoots()
-      .then(roots => void loadDir(roots[0] ?? '/'))
-      .catch(() => void loadDir('/'))
+      .then(fetched => {
+        setRoots(fetched)
+        void loadDir(fetched[0] ?? DEFAULT_PATH)
+      })
+      .catch(() => void loadDir(DEFAULT_PATH))
   }, [loadDir])
 
   // Reload when showHidden changes
@@ -250,8 +256,11 @@ export default function FileBrowser() {
     () => sortedEntries.filter(e => selectedPaths.has(e.path)),
     [sortedEntries, selectedPaths],
   )
-  const ctxEntry = ctxMenu?.entry ?? (selectedEntries.length === 1 ? selectedEntries[0] : null)
-  const isRO     = listing?.isReadOnly ?? false
+  const ctxEntry  = ctxMenu?.entry ?? (selectedEntries.length === 1 ? selectedEntries[0] : null)
+  const isRO      = listing?.isReadOnly ?? false
+  const homePath  = roots[0] ?? DEFAULT_PATH
+  // Highlight the root that is a prefix of the current path
+  const currentRoot = roots.find(r => currentPath.startsWith(r)) ?? homePath
 
   return (
     <div
@@ -268,8 +277,21 @@ export default function FileBrowser() {
     >
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-wrap">
+        {/* Root selector — jumps to a different allowed root */}
+        {roots.length > 0 && (
+          <select
+            value={currentRoot}
+            onChange={e => navigate(e.target.value)}
+            className="text-xs bg-bg-primary border border-border rounded px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent-blue flex-shrink-0 max-w-40"
+          >
+            {roots.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        )}
         <Breadcrumb
           breadcrumbs={listing?.breadcrumbs ?? []}
+          homePath={homePath}
           onNavigate={navigate}
         />
         <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
