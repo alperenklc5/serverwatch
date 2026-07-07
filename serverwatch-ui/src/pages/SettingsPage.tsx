@@ -57,7 +57,7 @@ export default function SettingsPage() {
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span>{label}</span>
                 {adminOnly && (
-                  <Shield className="w-3 h-3 text-accent-amber ml-auto flex-shrink-0" title="Admin only" />
+                  <span title="Admin only" className="ml-auto flex-shrink-0"><Shield className="w-3 h-3 text-accent-amber" /></span>
                 )}
               </button>
             ))}

@@ -44,7 +44,10 @@ export default function NotificationSettings() {
   return (
     <div className="bg-bg-secondary border border-border rounded-xl p-6 space-y-5">
       <div className="flex items-center gap-2 mb-1">
-        <Bell className="w-4 h-4 text-text-tertiary" />
+        {notifActive
+          ? <Bell    className="w-4 h-4 text-text-tertiary" />
+          : <BellOff className="w-4 h-4 text-text-tertiary" />
+        }
         <h2 className="text-sm font-semibold text-text-primary">Notifications</h2>
       </div>
 
