@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Collection;
 
 /**
  * STOMP channel interceptor that authenticates WebSocket CONNECT frames.
@@ -58,6 +59,28 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 SecurityContext context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication((Authentication) user);
                 SecurityContextHolder.setContext(context);
+            }
+        }
+
+        // Enforce ADMIN-only terminal destinations on SEND frames.
+        // URL-based security matchers do not apply to WebSocket messages, so we
+        // guard /app/terminal/** here explicitly.
+        if (accessor != null && StompCommand.SEND.equals(accessor.getCommand())) {
+            String destination = accessor.getDestination();
+            if (destination != null && destination.startsWith("/app/terminal/")) {
+                Principal principal = accessor.getUser();
+                boolean isAdmin = false;
+                if (principal instanceof Authentication auth) {
+                    Collection<?> authorities = auth.getAuthorities();
+                    isAdmin = authorities.stream()
+                            .anyMatch(a -> a instanceof org.springframework.security.core.GrantedAuthority ga
+                                    && ga.getAuthority().equals("ROLE_ADMIN"));
+                }
+                if (!isAdmin) {
+                    log.warn("WebSocket SEND to {} rejected: ADMIN role required (user={})",
+                            destination, principal != null ? principal.getName() : "anonymous");
+                    throw new SecurityException("WebSocket terminal access denied: ADMIN role required");
+                }
             }
         }
 

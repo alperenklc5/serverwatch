@@ -60,21 +60,43 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Dev static test page
                 .requestMatchers("/ws-test.html").permitAll()
-                // User management (was ADMIN-only via @PreAuthorize, relaxed to authenticated)
-                .requestMatchers("/api/auth/register", "/api/auth/users/**").authenticated()
-                // Terminal management
-                .requestMatchers("/api/terminal/**").authenticated()
+
+                // ── ADMIN-only endpoints ─────────────────────────────────────────
+                // Terminal REST + WebSocket destinations enforced in WebSocketAuthInterceptor
+                .requestMatchers("/api/terminal/**").hasRole("ADMIN")
                 // Docker lifecycle operations
-                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/start").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/stop").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/docker/containers/*/restart").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/docker/containers/*").authenticated()
-                // File write operations
-                .requestMatchers(HttpMethod.POST, "/api/files/write").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/files/create").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/files/upload").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/files/chmod").authenticated()
-                // Everything else requires authentication
+                .requestMatchers(HttpMethod.POST,
+                        "/api/docker/containers/*/start",
+                        "/api/docker/containers/*/stop",
+                        "/api/docker/containers/*/restart",
+                        "/api/docker/containers/*/pause",
+                        "/api/docker/containers/*/unpause").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/docker/containers/**").hasRole("ADMIN")
+                // File write / destructive operations
+                .requestMatchers(HttpMethod.POST,
+                        "/api/files/write",
+                        "/api/files/create",
+                        "/api/files/upload",
+                        "/api/files/chmod",
+                        "/api/files/move",
+                        "/api/files/copy").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/files").hasRole("ADMIN")
+                // User management
+                .requestMatchers("/api/auth/register", "/api/auth/users/**").hasRole("ADMIN")
+                // Git write operations
+                .requestMatchers(HttpMethod.POST,
+                        "/api/git/repos/clone",
+                        "/api/git/repos/add",
+                        "/api/git/repos/*/pull",
+                        "/api/git/repos/*/push",
+                        "/api/git/repos/*/checkout").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/git/repos/**").hasRole("ADMIN")
+                // Alert rule management
+                .requestMatchers(HttpMethod.POST, "/api/alerts/rules").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,   "/api/alerts/rules/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/alerts/rules/**").hasRole("ADMIN")
+
+                // Everything else requires authentication (any role)
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
