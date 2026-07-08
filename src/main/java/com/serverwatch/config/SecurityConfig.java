@@ -4,6 +4,7 @@ import com.serverwatch.model.entity.Permission;
 import com.serverwatch.security.JwtAuthenticationFilter;
 import com.serverwatch.security.PermissionAuthorizationManager;
 import com.serverwatch.security.SecurityHeadersFilter;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -38,14 +39,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final SecurityHeadersFilter securityHeadersFilter;
-    private final PermissionAuthorizationManager authManager;
+    private final ApplicationContext applicationContext;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
                           SecurityHeadersFilter securityHeadersFilter,
-                          PermissionAuthorizationManager authManager) {
+                          ApplicationContext applicationContext) {
         this.jwtFilter = jwtFilter;
         this.securityHeadersFilter = securityHeadersFilter;
-        this.authManager = authManager;
+        this.applicationContext = applicationContext;
     }
 
     @Bean
@@ -55,6 +56,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // Resolved here (not at construction time) to break the circular dependency:
+        // SecurityConfig → PermissionAuthorizationManager → PermissionService → UserRepository
+        // → JPA/datasource infra → Spring Security → SecurityConfig
+        PermissionAuthorizationManager authManager =
+                applicationContext.getBean(PermissionAuthorizationManager.class);
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
