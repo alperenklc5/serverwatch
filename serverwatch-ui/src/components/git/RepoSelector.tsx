@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, RefreshCw, ArrowDown, ArrowUp, Plus, CheckCircle2, Circle } from 'lucide-react'
+import { useAuthStore } from '../../stores/authStore'
 import type { GitRepo } from '../../types'
 import CloneDialog from './CloneDialog'
 
@@ -17,6 +18,8 @@ interface RepoSelectorProps {
 export default function RepoSelector({
   repos, selected, onSelect, onFetch, onPull, onPush, onCloned, loading,
 }: RepoSelectorProps) {
+  const hasPermission = useAuthStore(s => s.hasPermission)
+  const canWrite      = hasPermission('GIT_WRITE')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [cloneOpen, setCloneOpen]       = useState(false)
 
@@ -76,40 +79,44 @@ export default function RepoSelector({
 
         {/* Action buttons */}
         <div className="ml-auto flex items-center gap-1.5">
-          <button
-            onClick={onFetch}
-            disabled={!selected || loading}
-            title="Fetch"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Fetch</span>
-          </button>
-          <button
-            onClick={onPull}
-            disabled={!selected || loading}
-            title="Pull"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Pull</span>
-          </button>
-          <button
-            onClick={onPush}
-            disabled={!selected || loading}
-            title="Push"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Push</span>
-          </button>
-          <button
-            onClick={() => setCloneOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-accent-blue hover:bg-accent-blue/10 border border-accent-blue/30 rounded-lg transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clone</span>
-          </button>
+          {canWrite && (
+            <>
+              <button
+                onClick={onFetch}
+                disabled={!selected || loading}
+                title="Fetch"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Fetch</span>
+              </button>
+              <button
+                onClick={onPull}
+                disabled={!selected || loading}
+                title="Pull"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
+              >
+                <ArrowDown className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Pull</span>
+              </button>
+              <button
+                onClick={onPush}
+                disabled={!selected || loading}
+                title="Push"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary border border-border rounded-lg transition-colors disabled:opacity-40"
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Push</span>
+              </button>
+              <button
+                onClick={() => setCloneOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-accent-blue hover:bg-accent-blue/10 border border-accent-blue/30 rounded-lg transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Clone</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 

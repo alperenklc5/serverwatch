@@ -1,5 +1,5 @@
 import { apiClient } from './axios'
-import type { ApiResponse, User } from '../types'
+import type { ApiResponse, User, Permission, PermissionInfo } from '../types'
 
 export async function getUsers(): Promise<User[]> {
   const { data } = await apiClient.get<ApiResponse<User[]>>('/api/auth/users')
@@ -11,9 +11,10 @@ export async function createUser(
   email:       string,
   password:    string,
   displayName: string,
+  permissions?: Permission[],
 ): Promise<User> {
   const { data } = await apiClient.post<ApiResponse<User>>('/api/auth/register', {
-    username, email, password, displayName,
+    username, email, password, displayName, permissions,
   })
   return data.data
 }
@@ -32,4 +33,15 @@ export async function deleteUser(userId: number): Promise<void> {
 
 export async function logoutAllSessions(): Promise<void> {
   await apiClient.post('/api/auth/logout-all')
+}
+
+export async function getUserPermissions(userId: number): Promise<PermissionInfo[]> {
+  const { data } = await apiClient.get<ApiResponse<PermissionInfo[]>>(
+    `/api/auth/users/${userId}/permissions`,
+  )
+  return data.data
+}
+
+export async function setUserPermissions(userId: number, permissions: Permission[]): Promise<void> {
+  await apiClient.put(`/api/auth/users/${userId}/permissions`, { permissions })
 }

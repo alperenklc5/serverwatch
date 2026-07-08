@@ -2,6 +2,7 @@ package com.serverwatch.service;
 
 import com.serverwatch.model.dto.*;
 import com.serverwatch.model.entity.LoginAttempt;
+import com.serverwatch.model.entity.Permission;
 import com.serverwatch.model.entity.RefreshToken;
 import com.serverwatch.model.entity.Role;
 import com.serverwatch.model.entity.User;
@@ -17,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Core authentication service: login, logout, token refresh, registration, and password changes.
@@ -38,17 +42,20 @@ public class AuthService {
     private final LoginAttemptRepository attemptRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PermissionService permissionService;
 
     public AuthService(UserRepository userRepo,
                        RefreshTokenRepository refreshRepo,
                        LoginAttemptRepository attemptRepo,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       PermissionService permissionService) {
         this.userRepo = userRepo;
         this.refreshRepo = refreshRepo;
         this.attemptRepo = attemptRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.permissionService = permissionService;
     }
 
     /**
@@ -183,8 +190,8 @@ public class AuthService {
     }
 
     /**
-     * Creates a new user account with {@code USER} role.
-     * Only callable by ADMIN (enforced at the controller layer via {@code @PreAuthorize}).
+     * Creates a new user account with {@code USER} role and grants initial permissions.
+     * Only callable by users with USER_MANAGEMENT permission (enforced at controller layer).
      *
      * @throws IllegalArgumentException if username or email is already taken, or password is too short
      */
@@ -205,7 +212,19 @@ public class AuthService {
         user.setRole(Role.USER);
         user.setEnabled(true);
 
-        return toDTO(userRepo.save(user));
+        User savedUser = userRepo.save(user);
+        Long savedId = savedUser.getId();
+
+        if (request.permissions() != null && !request.permissions().isEmpty()) {
+            Set<Permission> perms = request.permissions().stream()
+                    .map(Permission::valueOf)
+                    .collect(Collectors.toSet());
+            permissionService.grantSpecificPermissions(savedId, perms, null);
+        } else {
+            permissionService.grantDefaultPermissions(savedId, null);
+        }
+
+        return toDTO(savedUser);
     }
 
     /**
@@ -231,12 +250,12 @@ public class AuthService {
         log.info("Password changed for userId={}; all sessions revoked", userId);
     }
 
-    /** Returns all users. Caller must hold ADMIN role. */
+    /** Returns all users. Caller must hold USER_MANAGEMENT permission. */
     public List<UserDTO> getAllUsers() {
         return userRepo.findAll().stream().map(this::toDTO).toList();
     }
 
-    /** Enables a user account. Caller must hold ADMIN role. */
+    /** Enables a user account. Caller must hold USER_MANAGEMENT permission. */
     @Transactional
     public void enableUser(Long userId) {
         User user = userRepo.findById(userId)
@@ -245,7 +264,7 @@ public class AuthService {
         userRepo.save(user);
     }
 
-    /** Disables a user account and revokes all their sessions. Caller must hold ADMIN role. */
+    /** Disables a user account and revokes all their sessions. Caller must hold USER_MANAGEMENT permission. */
     @Transactional
     public void disableUser(Long userId) {
         User user = userRepo.findById(userId)
@@ -255,10 +274,26 @@ public class AuthService {
         refreshRepo.revokeAllForUser(userId);
     }
 
-    /** Deletes a user and all their tokens. Caller must hold ADMIN role. */
+    /** Deletes a user and all their tokens. Caller must hold USER_MANAGEMENT permission. */
     @Transactional
     public void deleteUser(Long userId) {
         userRepo.deleteById(userId); // cascade deletes refresh_tokens
+    }
+
+    /** Returns the full permission list for a user, with granted flag for each. */
+    public List<PermissionDTO> getUserPermissions(Long userId) {
+        Set<Permission> granted = permissionService.getPermissions(userId);
+        return Arrays.stream(Permission.values())
+                .map(p -> PermissionDTO.of(p.name(), granted.contains(p)))
+                .toList();
+    }
+
+    /** Replaces the permission set for a user. Caller must hold USER_MANAGEMENT permission. */
+    public void setUserPermissions(Long userId, List<String> permissionNames, Long grantedBy) {
+        Set<Permission> desired = permissionNames.stream()
+                .map(Permission::valueOf)
+                .collect(Collectors.toSet());
+        permissionService.setPermissions(userId, desired, grantedBy);
     }
 
     /** Nightly cleanup of expired refresh tokens (3 AM). */
@@ -288,8 +323,12 @@ public class AuthService {
         return request.getRemoteAddr();
     }
 
-    /** Converts a {@link User} entity to its public-facing DTO. */
+    /** Converts a {@link User} entity to its public-facing DTO, including current permissions. */
     public UserDTO toDTO(User user) {
+        Set<String> permissions = permissionService.getPermissions(user.getId())
+                .stream()
+                .map(Permission::name)
+                .collect(Collectors.toSet());
         return new UserDTO(
                 user.getId(),
                 user.getUsername(),
@@ -298,6 +337,7 @@ public class AuthService {
                 user.getRole().name(),
                 user.isEnabled(),
                 user.getLastLoginAt(),
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                permissions);
     }
 }

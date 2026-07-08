@@ -1,6 +1,7 @@
 import { Play, Square, RefreshCw, FileText, Trash2, Shield, Loader2 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { formatBytes } from '../../lib/formatters'
+import { useAuthStore } from '../../stores/authStore'
 import type { ContainerInfo, ContainerStats } from '../../types'
 
 interface ContainerCardProps {
@@ -52,8 +53,11 @@ export default function ContainerCard({
   container, stats, actionLoading,
   onStart, onStop, onRestart, onRemove, onViewLogs, onInspect,
 }: ContainerCardProps) {
-  const running   = container.state === 'running'
-  const protected_ = isProtected(container)
+  const hasPermission = useAuthStore(s => s.hasPermission)
+  const canControl    = hasPermission('DOCKER_CONTROL')
+  const canDelete     = hasPermission('DOCKER_DELETE')
+  const running       = container.state === 'running'
+  const protected_    = isProtected(container)
   const dotColor  = STATE_DOT[container.state] ?? 'bg-text-tertiary'
   const textColor = STATE_TEXT[container.state] ?? 'text-text-tertiary'
 
@@ -121,7 +125,7 @@ export default function ContainerCard({
       >
         {running ? (
           <>
-            {!protected_ && (
+            {!protected_ && canControl && (
               <>
                 <ActionBtn
                   icon={Square}
@@ -149,14 +153,16 @@ export default function ContainerCard({
           </>
         ) : (
           <>
-            <ActionBtn
-              icon={Play}
-              label="Start"
-              loading={actionLoading === 'start'}
-              onClick={onStart}
-              className="hover:text-accent-green hover:bg-accent-green/10"
-            />
-            {!protected_ && (
+            {canControl && (
+              <ActionBtn
+                icon={Play}
+                label="Start"
+                loading={actionLoading === 'start'}
+                onClick={onStart}
+                className="hover:text-accent-green hover:bg-accent-green/10"
+              />
+            )}
+            {!protected_ && canDelete && (
               <ActionBtn
                 icon={Trash2}
                 label="Remove"

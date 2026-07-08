@@ -1,0 +1,10 @@
+package com.serverwatch.model.entity;
+
+public enum Permission {
+    TERMINAL_ACCESS,
+    FILES_VIEW, FILES_WRITE, FILES_DELETE,
+    DOCKER_VIEW, DOCKER_CONTROL, DOCKER_DELETE,
+    GIT_VIEW, GIT_WRITE,
+    ALERTS_VIEW, ALERTS_MANAGE,
+    USER_MANAGEMENT
+}

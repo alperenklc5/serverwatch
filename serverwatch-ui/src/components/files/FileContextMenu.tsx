@@ -3,6 +3,7 @@ import {
   FolderOpen, Download, Copy, Trash2,
   Info, FilePlus, FolderPlus, Upload, RefreshCw, FileText, CornerUpRight,
 } from 'lucide-react'
+import { useAuthStore } from '../../stores/authStore'
 import type { FileEntry } from '../../types'
 import { cn } from '../../lib/utils'
 
@@ -62,6 +63,9 @@ export default function FileContextMenu({
   onCopyPath, onProperties, onNewFile, onNewFolder, onUpload, onRefresh,
 }: FileContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const hasPermission = useAuthStore(s => s.hasPermission)
+  const canWrite  = hasPermission('FILES_WRITE')  && !isReadOnly
+  const canDelete = hasPermission('FILES_DELETE') && !isReadOnly
 
   // Clamp to viewport after first paint
   const safeX = Math.min(x, window.innerWidth  - 200)
@@ -76,7 +80,6 @@ export default function FileContextMenu({
   }, [onClose])
 
   const isFile = entry?.type === 'FILE' || entry?.type === 'SYMLINK'
-  const ro     = isReadOnly
 
   const wrap = (fn: () => void) => () => { fn(); onClose() }
 
@@ -91,17 +94,19 @@ export default function FileContextMenu({
         <>
           {/* File or directory selected */}
           <Item icon={FolderOpen} label="Open" onClick={wrap(onOpen)} />
-          {isFile && entry.isEditable && (
+          {isFile && entry.isEditable && canWrite && (
             <Item icon={FileText} label="Edit" onClick={wrap(onEdit)} />
           )}
           <Item icon={Download} label="Download" onClick={wrap(onDownload)} />
           <Sep />
           <Item icon={Copy}  label="Copy path" onClick={wrap(onCopyPath)} />
-          {!ro && (
+          {canWrite && (
+            <Item icon={CornerUpRight} label="Rename" onClick={wrap(onRename)} />
+          )}
+          {canDelete && (
             <>
-              <Item icon={CornerUpRight} label="Rename" onClick={wrap(onRename)} disabled={ro} />
               <Sep />
-              <Item icon={Trash2} label="Delete" onClick={wrap(onDelete)} danger disabled={ro} />
+              <Item icon={Trash2} label="Delete" onClick={wrap(onDelete)} danger />
             </>
           )}
           <Sep />
@@ -110,7 +115,7 @@ export default function FileContextMenu({
       ) : (
         <>
           {/* Background right-click */}
-          {!ro && (
+          {canWrite && (
             <>
               <Item icon={FilePlus}   label="New File"   onClick={wrap(onNewFile)} />
               <Item icon={FolderPlus} label="New Folder" onClick={wrap(onNewFolder)} />

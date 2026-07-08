@@ -7,19 +7,20 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { cn, getInitials } from '../../lib/utils'
+import type { Permission } from '../../types'
 
-const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { path: '/containers', label: 'Containers', Icon: Container },
-  { path: '/files', label: 'Files', Icon: FolderOpen },
-  { path: '/terminal', label: 'Terminal', Icon: TerminalSquare },
-  { path: '/git', label: 'Git', Icon: GitBranch },
-  { path: '/alerts', label: 'Alerts', Icon: Bell },
-] as const
+const NAV_ITEMS: { path: string; label: string; Icon: typeof LayoutDashboard; requiredPermission?: Permission }[] = [
+  { path: '/dashboard',   label: 'Dashboard',  Icon: LayoutDashboard },
+  { path: '/containers',  label: 'Containers', Icon: Container,       requiredPermission: 'DOCKER_VIEW' },
+  { path: '/files',       label: 'Files',      Icon: FolderOpen,      requiredPermission: 'FILES_VIEW' },
+  { path: '/terminal',    label: 'Terminal',   Icon: TerminalSquare,  requiredPermission: 'TERMINAL_ACCESS' },
+  { path: '/git',         label: 'Git',        Icon: GitBranch,       requiredPermission: 'GIT_VIEW' },
+  { path: '/alerts',      label: 'Alerts',     Icon: Bell,            requiredPermission: 'ALERTS_VIEW' },
+]
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
-  const { user, logout } = useAuthStore()
+  const { user, logout, hasPermission } = useAuthStore()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -55,7 +56,9 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(({ path, label, Icon }) => (
+        {NAV_ITEMS.filter(item =>
+          !item.requiredPermission || hasPermission(item.requiredPermission)
+        ).map(({ path, label, Icon }) => (
           <NavLink
             key={path}
             to={path}

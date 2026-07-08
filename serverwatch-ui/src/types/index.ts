@@ -1,4 +1,19 @@
 // ==================== AUTH ====================
+export type Permission =
+  | 'TERMINAL_ACCESS'
+  | 'FILES_VIEW' | 'FILES_WRITE' | 'FILES_DELETE'
+  | 'DOCKER_VIEW' | 'DOCKER_CONTROL' | 'DOCKER_DELETE'
+  | 'GIT_VIEW' | 'GIT_WRITE'
+  | 'ALERTS_VIEW' | 'ALERTS_MANAGE'
+  | 'USER_MANAGEMENT'
+
+export interface PermissionInfo {
+  permission: Permission
+  label: string
+  category: string
+  granted: boolean
+}
+
 export interface LoginRequest {
   username: string
   password: string
@@ -20,6 +35,7 @@ export interface User {
   enabled: boolean
   lastLoginAt: string
   createdAt: string
+  permissions: Permission[]
 }
 
 export interface ApiResponse<T> {

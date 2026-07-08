@@ -1,6 +1,8 @@
 package com.serverwatch.config;
 
+import com.serverwatch.model.entity.Permission;
 import com.serverwatch.security.JwtAuthenticationFilter;
+import com.serverwatch.security.PermissionAuthorizationManager;
 import com.serverwatch.security.SecurityHeadersFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +21,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Security configuration — stateless JWT authentication.
+ * Security configuration — stateless JWT + per-user permission system.
+ *
+ * <p>Phase 10 replaces the previous role-based {@code hasRole("ADMIN")} approach with
+ * {@link PermissionAuthorizationManager} which performs a database-backed permission check
+ * per user. This resolves a bug where Spring Security 6's {@code MvcRequestMatcher}
+ * silently failed to match paths at startup, causing authorization rules to be bypassed.
  *
  * <p>Public endpoints: {@code /api/auth/login}, {@code /api/auth/refresh}, {@code /api/health}.
- * Everything else requires a valid {@code Authorization: Bearer <token>} header.
- * Authorization is enforced entirely via URL-based requestMatchers; no @PreAuthorize is used
- * because STOMP/WebSocket threads do not carry a SecurityContext.
+ * Everything else requires a valid {@code Authorization: Bearer <token>} header plus the
+ * specific permission for that resource.
  */
 @Configuration
 @EnableWebSecurity
@@ -32,11 +38,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final SecurityHeadersFilter securityHeadersFilter;
+    private final PermissionAuthorizationManager authManager;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
-                          SecurityHeadersFilter securityHeadersFilter) {
+                          SecurityHeadersFilter securityHeadersFilter,
+                          PermissionAuthorizationManager authManager) {
         this.jwtFilter = jwtFilter;
         this.securityHeadersFilter = securityHeadersFilter;
+        this.authManager = authManager;
     }
 
     @Bean
@@ -52,51 +61,74 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints
+                // ── Public ──────────────────────────────────────────────────────
                 .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
-                // Health check
                 .requestMatchers("/api/health").permitAll()
-                // WebSocket handshake — JWT validated separately in WebSocketAuthInterceptor
+                // WebSocket handshake — JWT validated in WebSocketAuthInterceptor
                 .requestMatchers("/ws/**").permitAll()
-                // Dev static test page
                 .requestMatchers("/ws-test.html").permitAll()
 
-                // ── ADMIN-only endpoints ─────────────────────────────────────────
-                // Terminal REST + WebSocket destinations enforced in WebSocketAuthInterceptor
-                .requestMatchers("/api/terminal/**").hasRole("ADMIN")
-                // Docker lifecycle operations
+                // ── User management (USER_MANAGEMENT permission) ──────────────
+                // Must come before anyRequest so these are explicitly guarded
+                .requestMatchers("/api/auth/register", "/api/auth/users/**")
+                    .access(authManager.requiring(Permission.USER_MANAGEMENT))
+
+                // ── Terminal ──────────────────────────────────────────────────
+                .requestMatchers("/api/terminal/**")
+                    .access(authManager.requiring(Permission.TERMINAL_ACCESS))
+
+                // ── Files ──────────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.POST,
+                        "/api/files/write", "/api/files/create", "/api/files/upload",
+                        "/api/files/chmod", "/api/files/move", "/api/files/copy")
+                    .access(authManager.requiring(Permission.FILES_WRITE))
+                .requestMatchers(HttpMethod.DELETE, "/api/files")
+                    .access(authManager.requiring(Permission.FILES_DELETE))
+                .requestMatchers(HttpMethod.GET,
+                        "/api/files/list", "/api/files/roots", "/api/files/breadcrumbs",
+                        "/api/files/read", "/api/files/download", "/api/files/search",
+                        "/api/files/size")
+                    .access(authManager.requiring(Permission.FILES_VIEW))
+
+                // ── Docker ─────────────────────────────────────────────────────
+                // Specific lifecycle ops first (before broader GET /api/docker/**)
                 .requestMatchers(HttpMethod.POST,
                         "/api/docker/containers/*/start",
                         "/api/docker/containers/*/stop",
                         "/api/docker/containers/*/restart",
                         "/api/docker/containers/*/pause",
-                        "/api/docker/containers/*/unpause").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/docker/containers/**").hasRole("ADMIN")
-                // File write / destructive operations
-                .requestMatchers(HttpMethod.POST,
-                        "/api/files/write",
-                        "/api/files/create",
-                        "/api/files/upload",
-                        "/api/files/chmod",
-                        "/api/files/move",
-                        "/api/files/copy").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/files").hasRole("ADMIN")
-                // User management
-                .requestMatchers("/api/auth/register", "/api/auth/users/**").hasRole("ADMIN")
-                // Git write operations
-                .requestMatchers(HttpMethod.POST,
-                        "/api/git/repos/clone",
-                        "/api/git/repos/add",
-                        "/api/git/repos/*/pull",
-                        "/api/git/repos/*/push",
-                        "/api/git/repos/*/checkout").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/git/repos/**").hasRole("ADMIN")
-                // Alert rule management
-                .requestMatchers(HttpMethod.POST, "/api/alerts/rules").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,   "/api/alerts/rules/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/alerts/rules/**").hasRole("ADMIN")
+                        "/api/docker/containers/*/unpause")
+                    .access(authManager.requiring(Permission.DOCKER_CONTROL))
+                .requestMatchers(HttpMethod.DELETE, "/api/docker/containers/**")
+                    .access(authManager.requiring(Permission.DOCKER_DELETE))
+                .requestMatchers(HttpMethod.GET, "/api/docker/**")
+                    .access(authManager.requiring(Permission.DOCKER_VIEW))
 
-                // Everything else requires authentication (any role)
+                // ── Git ────────────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.POST,
+                        "/api/git/repos/clone", "/api/git/repos/add",
+                        "/api/git/repos/*/pull", "/api/git/repos/*/push",
+                        "/api/git/repos/*/fetch", "/api/git/repos/*/checkout",
+                        "/api/git/repos/*/branches")
+                    .access(authManager.requiring(Permission.GIT_WRITE))
+                .requestMatchers(HttpMethod.DELETE, "/api/git/repos/**")
+                    .access(authManager.requiring(Permission.GIT_WRITE))
+                .requestMatchers(HttpMethod.GET, "/api/git/**")
+                    .access(authManager.requiring(Permission.GIT_VIEW))
+
+                // ── Alerts ─────────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.POST,  "/api/alerts/rules/**")
+                    .access(authManager.requiring(Permission.ALERTS_MANAGE))
+                .requestMatchers(HttpMethod.PUT,   "/api/alerts/rules/**")
+                    .access(authManager.requiring(Permission.ALERTS_MANAGE))
+                .requestMatchers(HttpMethod.DELETE, "/api/alerts/rules/**")
+                    .access(authManager.requiring(Permission.ALERTS_MANAGE))
+                .requestMatchers(HttpMethod.GET, "/api/alerts/**")
+                    .access(authManager.requiring(Permission.ALERTS_VIEW))
+
+                // ── Dashboard metrics — any authenticated user ──────────────
+                .requestMatchers("/api/metrics/**").authenticated()
+
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -121,8 +153,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
-            "http://localhost:3000",   // Create React App
-            "http://localhost:5173"    // Vite
+            "http://localhost:3000",
+            "http://localhost:5173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

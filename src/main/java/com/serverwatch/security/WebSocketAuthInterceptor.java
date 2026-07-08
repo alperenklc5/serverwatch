@@ -1,8 +1,10 @@
 package com.serverwatch.security;
 
+import com.serverwatch.model.entity.Permission;
 import com.serverwatch.model.entity.User;
 import com.serverwatch.repository.UserRepository;
 import com.serverwatch.service.JwtService;
+import com.serverwatch.service.PermissionService;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -20,17 +22,10 @@ import org.springframework.stereotype.Component;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Collection;
 
 /**
- * STOMP channel interceptor that authenticates WebSocket CONNECT frames.
- *
- * <p>Clients must send the JWT in the STOMP CONNECT headers:
- * <pre>
- *   Authorization: Bearer &lt;accessToken&gt;
- * </pre>
- * The token is validated and the user principal is attached to the STOMP session.
- * All subsequent SUBSCRIBE / SEND frames in the same session inherit that principal.
+ * STOMP channel interceptor that authenticates WebSocket CONNECT frames
+ * and enforces TERMINAL_ACCESS permission on terminal message frames.
  */
 @Slf4j
 @Component
@@ -38,10 +33,14 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private final JwtService jwtService;
     private final UserRepository userRepo;
+    private final PermissionService permissionService;
 
-    public WebSocketAuthInterceptor(JwtService jwtService, UserRepository userRepo) {
+    public WebSocketAuthInterceptor(JwtService jwtService,
+                                    UserRepository userRepo,
+                                    PermissionService permissionService) {
         this.jwtService = jwtService;
         this.userRepo = userRepo;
+        this.permissionService = permissionService;
     }
 
     @Override
@@ -49,10 +48,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor =
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        // For every STOMP message (SEND, SUBSCRIBE, etc.), restore the authentication
-        // on the current thread so any downstream code can find it in SecurityContextHolder.
-        // Spring carries the principal on the STOMP session but does NOT populate
-        // SecurityContextHolder on message-processing threads — we do it here.
+        // Restore authentication on the current thread for every STOMP frame
         if (accessor != null) {
             Principal user = accessor.getUser();
             if (user != null) {
@@ -62,24 +58,21 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
         }
 
-        // Enforce ADMIN-only terminal destinations on SEND frames.
-        // URL-based security matchers do not apply to WebSocket messages, so we
-        // guard /app/terminal/** here explicitly.
+        // Enforce TERMINAL_ACCESS permission on terminal SEND frames.
+        // URL-based security matchers don't apply to STOMP message routing.
         if (accessor != null && StompCommand.SEND.equals(accessor.getCommand())) {
             String destination = accessor.getDestination();
             if (destination != null && destination.startsWith("/app/terminal/")) {
                 Principal principal = accessor.getUser();
-                boolean isAdmin = false;
-                if (principal instanceof Authentication auth) {
-                    Collection<?> authorities = auth.getAuthorities();
-                    isAdmin = authorities.stream()
-                            .anyMatch(a -> a instanceof org.springframework.security.core.GrantedAuthority ga
-                                    && ga.getAuthority().equals("ROLE_ADMIN"));
+                if (!(principal instanceof Authentication auth)
+                        || !(auth.getPrincipal() instanceof User user)) {
+                    log.warn("WebSocket SEND to {} rejected: not authenticated", destination);
+                    throw new SecurityException("WebSocket terminal access denied: authentication required");
                 }
-                if (!isAdmin) {
-                    log.warn("WebSocket SEND to {} rejected: ADMIN role required (user={})",
-                            destination, principal != null ? principal.getName() : "anonymous");
-                    throw new SecurityException("WebSocket terminal access denied: ADMIN role required");
+                if (!permissionService.hasPermission(user.getId(), Permission.TERMINAL_ACCESS)) {
+                    log.warn("WebSocket SEND to {} rejected: TERMINAL_ACCESS not granted (user={})",
+                            destination, user.getUsername());
+                    throw new SecurityException("WebSocket terminal access denied: TERMINAL_ACCESS permission required");
                 }
             }
         }
@@ -94,7 +87,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         String token = authHeader.substring(7);
-        Claims claims = jwtService.parseToken(token); // throws if invalid/expired
+        Claims claims = jwtService.parseToken(token);
         String username = claims.getSubject();
         String role = claims.get("role", String.class);
 

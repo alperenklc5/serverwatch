@@ -1,6 +1,7 @@
 package com.serverwatch.model.dto;
 
 import java.time.Instant;
+import java.util.Set;
 
 public record UserDTO(
         Long id,
@@ -10,5 +11,6 @@ public record UserDTO(
         String role,
         boolean enabled,
         Instant lastLoginAt,
-        Instant createdAt
+        Instant createdAt,
+        Set<String> permissions
 ) {}

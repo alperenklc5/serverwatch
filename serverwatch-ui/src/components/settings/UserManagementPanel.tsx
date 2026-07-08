@@ -1,18 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Users, Trash2, ToggleLeft, ToggleRight, Shield, User } from 'lucide-react'
+import { Users, Trash2, ToggleLeft, ToggleRight, Shield, User, KeyRound } from 'lucide-react'
 import { getUsers, enableUser, disableUser, deleteUser } from '../../api/settings'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatRelative } from '../../lib/formatters'
 import type { User as UserType } from '../../types'
 import CreateUserDialog from './CreateUserDialog'
+import PermissionEditor from './PermissionEditor'
 
 export default function UserManagementPanel() {
   const currentUser = useAuthStore(s => s.user)
   const addToast    = useToastStore(s => s.addToast)
-  const [users, setUsers]     = useState<UserType[]>([])
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy]       = useState<Record<number, boolean>>({})
+  const [users, setUsers]           = useState<UserType[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [busy, setBusy]             = useState<Record<number, boolean>>({})
+  const [editingPerms, setEditingPerms] = useState<UserType | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -106,6 +108,13 @@ export default function UserManagementPanel() {
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
+                    onClick={() => setEditingPerms(u)}
+                    title="Edit permissions"
+                    className="p-1.5 rounded text-text-tertiary hover:text-accent-blue hover:bg-accent-blue/10 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleToggle(u)}
                     disabled={isBusy || isSelf}
                     title={u.enabled ? 'Disable user' : 'Enable user'}
@@ -129,6 +138,15 @@ export default function UserManagementPanel() {
             )
           })}
         </div>
+      )}
+
+      {editingPerms && (
+        <PermissionEditor
+          user={editingPerms}
+          open={!!editingPerms}
+          onOpenChange={open => { if (!open) setEditingPerms(null) }}
+          onSaved={load}
+        />
       )}
     </div>
   )

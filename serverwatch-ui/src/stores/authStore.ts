@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { login as apiLogin, logout as apiLogout, getMe, refresh } from '../api/auth'
 import { setTokens, clearTokens, getRefreshToken } from '../api/axios'
 import { TOKEN_KEY } from '../lib/constants'
-import type { User } from '../types'
+import type { User, Permission } from '../types'
 
 interface AuthState {
   user: User | null
@@ -12,6 +12,7 @@ interface AuthState {
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
   setUser: (user: User) => void
+  hasPermission: (permission: Permission) => boolean
 }
 
 export const useAuthStore = create<AuthState>(set => ({
@@ -63,4 +64,9 @@ export const useAuthStore = create<AuthState>(set => ({
   },
 
   setUser: user => set({ user }),
+
+  hasPermission: (permission) => {
+    const { user } = useAuthStore.getState()
+    return user?.permissions?.includes(permission) ?? false
+  },
 }))

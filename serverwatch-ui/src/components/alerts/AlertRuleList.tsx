@@ -1,5 +1,6 @@
 import type { AlertRule } from '../../types'
 import { Pencil, Trash2, Zap, Plus } from 'lucide-react'
+import { useAuthStore } from '../../stores/authStore'
 import { formatRelative } from '../../lib/formatters'
 
 interface AlertRuleListProps {
@@ -63,6 +64,8 @@ function ChannelBadge({ channel }: { channel: string }) {
 export default function AlertRuleList({
   rules, loading, onEdit, onDelete, onToggle, onTest, onCreate,
 }: AlertRuleListProps) {
+  const canManage = useAuthStore(s => s.hasPermission('ALERTS_MANAGE'))
+
   if (loading && rules.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-text-tertiary text-sm">
@@ -75,13 +78,15 @@ export default function AlertRuleList({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Alert Rules</h2>
-        <button
-          onClick={onCreate}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-accent-blue hover:bg-accent-blue/80 rounded-lg transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Create Rule
-        </button>
+        {canManage && (
+          <button
+            onClick={onCreate}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-accent-blue hover:bg-accent-blue/80 rounded-lg transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create Rule
+          </button>
+        )}
       </div>
 
       {rules.length === 0 ? (
@@ -100,10 +105,14 @@ export default function AlertRuleList({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
-                <Toggle
-                  checked={rule.enabled}
-                  onChange={v => onToggle(rule.id, v)}
-                />
+                {canManage ? (
+                  <Toggle
+                    checked={rule.enabled}
+                    onChange={v => onToggle(rule.id, v)}
+                  />
+                ) : (
+                  <span className={`w-5 h-3 rounded-full inline-block ${rule.enabled ? 'bg-accent-green' : 'bg-border'}`} />
+                )}
                 <span className="text-sm font-medium text-text-primary truncate">{rule.name}</span>
                 {!rule.enabled && (
                   <span className="text-xs text-text-tertiary bg-bg-tertiary px-1.5 py-0.5 rounded">
@@ -120,20 +129,24 @@ export default function AlertRuleList({
                 >
                   <Zap className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  onClick={() => onEdit(rule)}
-                  title="Edit rule"
-                  className="p-1.5 rounded text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onDelete(rule.id)}
-                  title="Delete rule"
-                  className="p-1.5 rounded text-text-tertiary hover:text-accent-red hover:bg-bg-tertiary transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {canManage && (
+                  <>
+                    <button
+                      onClick={() => onEdit(rule)}
+                      title="Edit rule"
+                      className="p-1.5 rounded text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(rule.id)}
+                      title="Delete rule"
+                      className="p-1.5 rounded text-text-tertiary hover:text-accent-red hover:bg-bg-tertiary transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

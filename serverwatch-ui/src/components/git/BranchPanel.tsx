@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { GitBranch, Plus, ChevronRight, ChevronDown, X } from 'lucide-react'
+import { useAuthStore } from '../../stores/authStore'
 import type { GitBranch as GitBranchType } from '../../types'
 import { checkout, createBranch, deleteBranch } from '../../api/git'
 import { useToastStore } from '../../stores/toastStore'
@@ -18,6 +19,7 @@ interface ContextMenu {
 }
 
 export default function BranchPanel({ repoId, branches, onBranchChange }: BranchPanelProps) {
+  const canWrite = useAuthStore(s => s.hasPermission('GIT_WRITE'))
   const [localOpen, setLocalOpen]     = useState(true)
   const [remoteOpen, setRemoteOpen]   = useState(true)
   const [ctxMenu, setCtxMenu]         = useState<ContextMenu | null>(null)
@@ -81,7 +83,7 @@ export default function BranchPanel({ repoId, branches, onBranchChange }: Branch
   function BranchRow({ branch }: { branch: GitBranchType }) {
     return (
       <div
-        onDoubleClick={() => void handleCheckout(branch)}
+        onDoubleClick={() => canWrite && void handleCheckout(branch)}
         onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, branch }) }}
         className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer rounded-sm select-none transition-colors ${
           branch.isCurrent
@@ -107,13 +109,15 @@ export default function BranchPanel({ repoId, branches, onBranchChange }: Branch
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border flex-shrink-0">
           <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Branches</span>
-          <button
-            onClick={() => setCreateOpen(true)}
-            disabled={loading}
-            className="p-1 rounded hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => setCreateOpen(true)}
+              disabled={loading}
+              className="p-1 rounded hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto py-1">
@@ -153,30 +157,37 @@ export default function BranchPanel({ repoId, branches, onBranchChange }: Branch
             style={{ left: ctxMenu.x, top: ctxMenu.y }}
             onClick={e => e.stopPropagation()}
           >
-            <button
-              onClick={() => { void handleCheckout(ctxMenu.branch); setCtxMenu(null) }}
-              disabled={ctxMenu.branch.isCurrent || ctxMenu.branch.isRemote}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary text-left disabled:opacity-40"
-            >
-              <GitBranch className="w-3.5 h-3.5" />
-              Checkout
-            </button>
-            <button
-              onClick={() => { setStartPoint(ctxMenu.branch.name); setCreateOpen(true); setCtxMenu(null) }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary text-left"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Branch from here
-            </button>
-            {!ctxMenu.branch.isRemote && (
-              <button
-                onClick={() => void handleDelete(ctxMenu.branch)}
-                disabled={ctxMenu.branch.isCurrent}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-accent-red hover:bg-bg-tertiary text-left disabled:opacity-40"
-              >
-                <X className="w-3.5 h-3.5" />
-                Delete
-              </button>
+            {canWrite && (
+              <>
+                <button
+                  onClick={() => { void handleCheckout(ctxMenu.branch); setCtxMenu(null) }}
+                  disabled={ctxMenu.branch.isCurrent || ctxMenu.branch.isRemote}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary text-left disabled:opacity-40"
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                  Checkout
+                </button>
+                <button
+                  onClick={() => { setStartPoint(ctxMenu.branch.name); setCreateOpen(true); setCtxMenu(null) }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary text-left"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Branch from here
+                </button>
+                {!ctxMenu.branch.isRemote && (
+                  <button
+                    onClick={() => void handleDelete(ctxMenu.branch)}
+                    disabled={ctxMenu.branch.isCurrent}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-accent-red hover:bg-bg-tertiary text-left disabled:opacity-40"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                )}
+              </>
+            )}
+            {!canWrite && (
+              <p className="px-3 py-2 text-xs text-text-tertiary">No write access</p>
             )}
           </div>
         </div>
