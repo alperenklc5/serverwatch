@@ -11,7 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Authentication and user management endpoints.
@@ -123,20 +122,6 @@ public class AuthController {
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         authService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.ok(null));
-    }
-
-    @GetMapping("/users/{id}/permissions")
-    public ResponseEntity<ApiResponse<List<PermissionDTO>>> getUserPermissions(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(authService.getUserPermissions(id)));
-    }
-
-    @PutMapping("/users/{id}/permissions")
-    public ResponseEntity<ApiResponse<Void>> setUserPermissions(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser,
-            @RequestBody Map<String, List<String>> body) {
-        authService.setUserPermissions(id, body.getOrDefault("permissions", List.of()), currentUser.getId());
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
