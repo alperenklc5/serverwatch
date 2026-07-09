@@ -15,8 +15,8 @@ import java.util.Map;
  * Permission management endpoints.
  *
  * <pre>
- * GET  /api/users/{id}/permissions — ADMIN only
- * PUT  /api/users/{id}/permissions — ADMIN only
+ * GET  /api/users/perms/{id} — USER_MANAGEMENT only
+ * PUT  /api/users/perms/{id} — USER_MANAGEMENT only
  * </pre>
  */
 @RestController
@@ -29,12 +29,12 @@ public class PermissionController {
         this.authService = authService;
     }
 
-    @GetMapping("/{id}/permissions")
+    @GetMapping("/perms/{id}")
     public ResponseEntity<ApiResponse<List<PermissionDTO>>> getUserPermissions(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(authService.getUserPermissions(id)));
     }
 
-    @PutMapping("/{id}/permissions")
+    @PutMapping("/perms/{id}")
     public ResponseEntity<ApiResponse<Void>> setUserPermissions(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

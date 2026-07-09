@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -149,6 +150,20 @@ public class GlobalExceptionHandler {
                 : HttpStatus.SERVICE_UNAVAILABLE;
         return ResponseEntity.status(status)
                 .body(ApiResponse.error("Docker daemon error: " + cleanDockerMessage(ex)));
+    }
+
+    // ── Routing ───────────────────────────────────────────────────────────────
+
+    /**
+     * Spring MVC throws this when no handler is registered for a path and the
+     * static-resource handler also finds nothing. Without an explicit handler here,
+     * the catch-all {@code Exception.class} below would swallow it and return 500.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException ex) {
+        log.debug("No handler found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Resource not found"));
     }
 
     // ── Catch-all ─────────────────────────────────────────────────────────────
