@@ -76,7 +76,7 @@ public class SecurityConfig {
 
                 // ── User management (USER_MANAGEMENT permission) ──────────────
                 // Must come before anyRequest so these are explicitly guarded
-                .requestMatchers("/api/auth/register", "/api/auth/users/**")
+                .requestMatchers("/api/auth/register", "/api/auth/users/**", "/api/users/**")
                     .access(authManager.requiring(Permission.USER_MANAGEMENT))
 
                 // ── Terminal ──────────────────────────────────────────────────

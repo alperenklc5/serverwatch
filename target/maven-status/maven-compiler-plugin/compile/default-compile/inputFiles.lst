@@ -21,6 +21,7 @@ C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\FileContro
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\GitController.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\HealthController.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\MetricController.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\PermissionController.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\controller\TerminalController.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\exception\GlobalExceptionHandler.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\AlertEventDTO.java
@@ -50,6 +51,7 @@ C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\ImageDTO.ja
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\LoginRequest.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\NetworkMetricDTO.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\PathBreadcrumb.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\PermissionDTO.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\PortMapping.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\ProcessInfoDTO.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\dto\RefreshRequest.java
@@ -66,17 +68,21 @@ C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\AlertHis
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\AlertRule.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\LoginAttempt.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\MetricSnapshot.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\Permission.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\RefreshToken.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\Role.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\User.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\model\entity\UserPermission.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\AlertHistoryRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\AlertRuleRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\LoginAttemptRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\MetricSnapshotRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\RefreshTokenRepository.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\UserPermissionRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\repository\UserRepository.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\scheduler\ContainerMetricScheduler.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\security\JwtAuthenticationFilter.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\security\PermissionAuthorizationManager.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\security\SecurityHeadersFilter.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\security\WebSocketAuthInterceptor.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\ServerWatchApplication.java
@@ -88,6 +94,7 @@ C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\GitService.ja
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\JwtService.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\MetricService.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\PathValidator.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\PermissionService.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\RepoRegistry.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\TerminalService.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\service\WebSocketPublisher.java

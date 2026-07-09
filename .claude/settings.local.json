@@ -7,7 +7,10 @@
       "Bash(cmd //c \"mvnw.cmd compile\")",
       "Bash(curl -s \"http://localhost:8090/ws/info\")",
       "Bash(python3 -m json.tool)",
-      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}' -H 'Upgrade: websocket' -H 'Connection: Upgrade' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13' http://localhost:8090/ws)"
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}' -H 'Upgrade: websocket' -H 'Connection: Upgrade' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13' http://localhost:8090/ws)",
+      "Bash(cmd:*)",
+      "Bash(cmd /c \"mvnw.cmd spring-boot:run \\\\\"-Dspring-boot.run.profiles=dev\\\\\"\")",
+      "Bash(echo \"Background PID: $!\")"
     ]
   }
 }

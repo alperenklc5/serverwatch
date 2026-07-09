@@ -12,6 +12,7 @@ com\serverwatch\model\dto\ImageDTO.class
 com\serverwatch\model\entity\Role.class
 com\serverwatch\config\OshiConfig.class
 com\serverwatch\controller\AuthController.class
+com\serverwatch\repository\UserPermissionRepository.class
 com\serverwatch\model\dto\ContainerStatsDTO.class
 com\serverwatch\model\dto\FileContentDTO.class
 com\serverwatch\model\dto\AlertRuleDTO.class
@@ -40,9 +41,11 @@ com\serverwatch\config\ServerWatchProperties$FileManager.class
 com\serverwatch\security\WebSocketAuthInterceptor.class
 com\serverwatch\terminal\TerminalSession.class
 com\serverwatch\config\ServerWatchProperties$Terminal.class
+com\serverwatch\service\PermissionService.class
 com\serverwatch\scheduler\ContainerMetricScheduler.class
 com\serverwatch\repository\AlertHistoryRepository.class
 com\serverwatch\service\AlertService.class
+com\serverwatch\model\entity\UserPermission.class
 com\serverwatch\service\MetricService.class
 com\serverwatch\model\dto\ContainerLogDTO.class
 com\serverwatch\config\ServerWatchProperties$Docker.class
@@ -52,9 +55,12 @@ com\serverwatch\model\dto\PortMapping.class
 com\serverwatch\model\dto\TerminalInputMessage.class
 com\serverwatch\model\dto\AuthResponse.class
 com\serverwatch\controller\MetricController.class
+com\serverwatch\model\entity\Permission.class
+com\serverwatch\model\dto\PermissionDTO.class
 com\serverwatch\controller\GitController.class
 com\serverwatch\model\dto\GitDiffDTO.class
 com\serverwatch\model\dto\GitDiffEntryDTO.class
+com\serverwatch\security\PermissionAuthorizationManager.class
 com\serverwatch\alert\AlertEvaluator.class
 com\serverwatch\service\FileService$2.class
 com\serverwatch\collector\SystemMetricCollector.class
@@ -82,6 +88,7 @@ com\serverwatch\config\ServerWatchProperties$Alert.class
 com\serverwatch\model\dto\DirectoryListingDTO.class
 com\serverwatch\websocket\WebSocketEventListener.class
 com\serverwatch\model\dto\FileOperationRequest.class
+com\serverwatch\controller\PermissionController.class
 com\serverwatch\repository\MetricSnapshotRepository.class
 com\serverwatch\model\dto\GitOperationRequest.class
 com\serverwatch\model\entity\User.class
