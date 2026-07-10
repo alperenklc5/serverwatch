@@ -76,7 +76,7 @@ public class SecurityConfig {
 
                 // ── User management (USER_MANAGEMENT permission) ──────────────
                 // Must come before anyRequest so these are explicitly guarded
-                .requestMatchers("/api/auth/register", "/api/auth/users/**", "/api/users/**")
+                .requestMatchers("/api/auth/register", "/api/auth/users/**", "/api/perm/**")
                     .access(authManager.requiring(Permission.USER_MANAGEMENT))
 
                 // ── Terminal ──────────────────────────────────────────────────
@@ -158,13 +158,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of(
-            "http://localhost:3000",
-            "http://localhost:5173"
-        ));
+        config.addAllowedOriginPattern("*");
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
