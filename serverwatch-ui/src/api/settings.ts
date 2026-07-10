@@ -37,11 +37,11 @@ export async function logoutAllSessions(): Promise<void> {
 
 export async function getUserPermissions(userId: number): Promise<PermissionInfo[]> {
   const { data } = await apiClient.get<ApiResponse<PermissionInfo[]>>(
-    `/api/auth/users/${userId}/permissions`,
+    `/api/perm/perms/${userId}`,
   )
   return data.data
 }
 
 export async function setUserPermissions(userId: number, permissions: Permission[]): Promise<void> {
-  await apiClient.put(`/api/auth/users/${userId}/permissions`, { permissions })
+  await apiClient.put(`/api/perm/perms/${userId}`, { permissions })
 }

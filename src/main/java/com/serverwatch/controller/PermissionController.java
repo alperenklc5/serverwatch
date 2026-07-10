@@ -15,12 +15,12 @@ import java.util.Map;
  * Permission management endpoints.
  *
  * <pre>
- * GET  /api/users/perms/{id} — USER_MANAGEMENT only
- * PUT  /api/users/perms/{id} — USER_MANAGEMENT only
+ * GET  /api/perm/perms/{id} — USER_MANAGEMENT only
+ * PUT  /api/perm/perms/{id} — USER_MANAGEMENT only
  * </pre>
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/perm")
 public class PermissionController {
 
     private final AuthService authService;
