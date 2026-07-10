@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Users, Trash2, ToggleLeft, ToggleRight, Shield, User, KeyRound } from 'lucide-react'
 import { getUsers, enableUser, disableUser, deleteUser } from '../../api/settings'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore, type AuthState } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatRelative } from '../../lib/formatters'
 import type { User as UserType } from '../../types'
@@ -9,7 +9,7 @@ import CreateUserDialog from './CreateUserDialog'
 import PermissionEditor from './PermissionEditor'
 
 export default function UserManagementPanel() {
-  const currentUser = useAuthStore(s => s.user)
+  const currentUser = useAuthStore((s: AuthState) => s.user)
   const addToast    = useToastStore(s => s.addToast)
   const [users, setUsers]           = useState<UserType[]>([])
   const [loading, setLoading]       = useState(true)

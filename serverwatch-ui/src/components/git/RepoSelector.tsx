@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, RefreshCw, ArrowDown, ArrowUp, Plus, CheckCircle2, Circle } from 'lucide-react'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore, type AuthState } from '../../stores/authStore'
 import type { GitRepo } from '../../types'
 import CloneDialog from './CloneDialog'
 
@@ -18,7 +18,7 @@ interface RepoSelectorProps {
 export default function RepoSelector({
   repos, selected, onSelect, onFetch, onPull, onPush, onCloned, loading,
 }: RepoSelectorProps) {
-  const hasPermission = useAuthStore(s => s.hasPermission)
+  const hasPermission = useAuthStore((s: AuthState) => s.hasPermission)
   const canWrite      = hasPermission('GIT_WRITE')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [cloneOpen, setCloneOpen]       = useState(false)

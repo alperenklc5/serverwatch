@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { GitBranch, Plus, ChevronRight, ChevronDown, X } from 'lucide-react'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore, type AuthState } from '../../stores/authStore'
 import type { GitBranch as GitBranchType } from '../../types'
 import { checkout, createBranch, deleteBranch } from '../../api/git'
 import { useToastStore } from '../../stores/toastStore'
@@ -19,7 +19,7 @@ interface ContextMenu {
 }
 
 export default function BranchPanel({ repoId, branches, onBranchChange }: BranchPanelProps) {
-  const canWrite = useAuthStore(s => s.hasPermission('GIT_WRITE'))
+  const canWrite = useAuthStore((s: AuthState) => s.hasPermission('GIT_WRITE'))
   const [localOpen, setLocalOpen]     = useState(true)
   const [remoteOpen, setRemoteOpen]   = useState(true)
   const [ctxMenu, setCtxMenu]         = useState<ContextMenu | null>(null)

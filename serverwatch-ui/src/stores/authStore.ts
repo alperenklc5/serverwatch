@@ -4,7 +4,7 @@ import { setTokens, clearTokens, getRefreshToken } from '../api/axios'
 import { TOKEN_KEY } from '../lib/constants'
 import type { User, Permission } from '../types'
 
-interface AuthState {
+export interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>(set => ({
 
   setUser: user => set({ user }),
 
-  hasPermission: (permission) => {
+  hasPermission: (permission: Permission): boolean => {
     const { user } = useAuthStore.getState()
     return user?.permissions?.includes(permission) ?? false
   },

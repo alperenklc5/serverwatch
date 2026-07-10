@@ -3,7 +3,7 @@ import {
   FolderOpen, Download, Copy, Trash2,
   Info, FilePlus, FolderPlus, Upload, RefreshCw, FileText, CornerUpRight,
 } from 'lucide-react'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore, type AuthState } from '../../stores/authStore'
 import type { FileEntry } from '../../types'
 import { cn } from '../../lib/utils'
 
@@ -63,7 +63,7 @@ export default function FileContextMenu({
   onCopyPath, onProperties, onNewFile, onNewFolder, onUpload, onRefresh,
 }: FileContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const hasPermission = useAuthStore(s => s.hasPermission)
+  const hasPermission = useAuthStore((s: AuthState) => s.hasPermission)
   const canWrite  = hasPermission('FILES_WRITE')  && !isReadOnly
   const canDelete = hasPermission('FILES_DELETE') && !isReadOnly
 

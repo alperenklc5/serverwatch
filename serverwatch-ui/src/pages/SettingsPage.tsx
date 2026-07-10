@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { User, Users, Palette, Bell, Info, Shield } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore, type AuthState } from '../stores/authStore'
 import { cn } from '../lib/utils'
 import ActiveSessionCard    from '../components/settings/ActiveSessionCard'
 import ChangePasswordForm   from '../components/settings/ChangePasswordForm'
@@ -29,7 +29,7 @@ const TABS: TabDef[] = [
 ]
 
 export default function SettingsPage() {
-  const user         = useAuthStore(s => s.user)
+  const user         = useAuthStore((s: AuthState) => s.user)
   const isAdmin      = user?.role === 'ADMIN'
   const [tab, setTab] = useState<Tab>('account')
 

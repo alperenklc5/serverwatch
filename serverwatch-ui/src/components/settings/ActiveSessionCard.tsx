@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { LogOut, User, Shield } from 'lucide-react'
 import { logoutAllSessions } from '../../api/settings'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore, type AuthState } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatRelative } from '../../lib/formatters'
 
 export default function ActiveSessionCard() {
-  const user      = useAuthStore(s => s.user)
+  const user      = useAuthStore((s: AuthState) => s.user)
   const addToast  = useToastStore(s => s.addToast)
   const [loading, setLoading] = useState(false)
 

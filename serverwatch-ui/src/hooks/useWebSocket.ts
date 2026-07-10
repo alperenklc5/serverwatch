@@ -3,7 +3,7 @@ import { Client, type StompSubscription } from '@stomp/stompjs'
 import { getAccessToken } from '../api/axios'
 import { WS_URL } from '../lib/constants'
 import { useMetricsStore } from '../stores/metricsStore'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore, type AuthState } from '../stores/authStore'
 
 export interface WebSocketHook {
   isConnected: boolean
@@ -16,7 +16,7 @@ export function useWebSocket(): WebSocketHook {
   const setConnected = useMetricsStore(s => s.setConnected)
   const isConnected = useMetricsStore(s => s.isConnected)
   const reconnectCount = useRef(0)
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const isAuthenticated = useAuthStore((s: AuthState) => s.isAuthenticated)
 
   useEffect(() => {
     if (!isAuthenticated) return
