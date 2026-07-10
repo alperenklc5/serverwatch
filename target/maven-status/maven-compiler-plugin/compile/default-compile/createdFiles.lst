@@ -62,6 +62,7 @@ com\serverwatch\model\dto\GitDiffDTO.class
 com\serverwatch\model\dto\GitDiffEntryDTO.class
 com\serverwatch\security\PermissionAuthorizationManager.class
 com\serverwatch\alert\AlertEvaluator.class
+com\serverwatch\config\CorsFilter.class
 com\serverwatch\service\FileService$2.class
 com\serverwatch\collector\SystemMetricCollector.class
 com\serverwatch\service\DockerService$1.class

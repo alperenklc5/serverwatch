@@ -8,6 +8,7 @@ C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\collector\ProcessColl
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\collector\SystemMetricCollector.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\AdminPasswordInitializer.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\AsyncConfig.java
+C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\CorsFilter.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\DockerConfig.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\OshiConfig.java
 C:\Users\Alperen\serverwatch\src\main\java\com\serverwatch\config\SchedulingConfig.java
