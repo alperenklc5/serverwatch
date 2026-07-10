@@ -4,9 +4,13 @@ services:
     build: .
     ports:
       - "8090:8090"
+    privileged: true
+    pid: "host"
     labels:
-      serverwatch.managed: "true"   # self-protection: prevents the app from stopping itself
+      serverwatch.managed: "true"
     volumes:
+      - /:/hostfs
+      - /opt/repos:/opt/repos
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -20,7 +24,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
   postgres:
     image: postgres:16-alpine
     environment:
@@ -34,6 +37,5 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
 volumes:
   pgdata:
